@@ -8,64 +8,111 @@ The application uses Tkinter for the GUI, Pandas for data storage,csv for data s
 """
 # import required libraries
 import tkinter as tk  # GUI framework for Python
-from tkinter import ttk, messagebox, Label  # Widgets and dialogs for Tkinter
+from tkinter import ttk, messagebox, Label, PhotoImage  # Widgets and dialogs for Tkinter
 from PIL import Image, ImageTk  # For image handling and display
 import pandas as pd  # For handling data manipulation and export
 from datetime import datetime  # For timestamping exported files
 import os  # For interacting with the operating system
 from pathlib import Path  # For managing file paths
 
-# main function to display the application's primary interface
-def show_application_interface():
+from habits import Habits  # Importing the Habits class from the habits module
+
+class AccountabilityPartner:
     """
-    Displays the main application interface for the Accountability Partner app.
+    Accountability Partner application class.
+    
+    This class initializes the main application window and handles the display of the main interface.
     """
-    # destroy the get started button and quote label
-    get_started_btn.destroy()   
-    quote.destroy()
+    def __init__(self,root):
+        self.root = root
+        # Main application window setup
+        root.geometry("800x700")
+        root.title("Accountability Partner")
 
-    # Add new daily habit button
-    add_habit_btn = tk.Button(main_frame, text = "Add New Daily Habit", width=25)
-    add_habit_btn.pack() #display the button in the main frame
+        # load and resize image
+        self.load_and_resize_image('AppLogo.png', (400, 400))
 
-    # Record today's activity button
-    record_activity_btn = tk.Button(main_frame, text = "Record Today's Activity", width=25)
-    record_activity_btn.pack() #display the button in the main frame
+        # show welcome screen
+        self.show_welcome_screen()
 
-    # Export data button
-    export_data_btn = tk.Button(main_frame, text = "Export habit data", width=25)
-    export_data_btn.pack() #display the button in the main frame
+    def load_and_resize_image(self, image_path, size):
+        # load image
+        image = Image.open(image_path)
+        # resize image
+        image = image.resize(size)
+        # convert to PhotoImage
+        self.logo = ImageTk.PhotoImage(image)        
+    
+    def show_welcome_screen(self):
+        """
+        Displays the welcome screen with the application logo and a quote.
+        """
+        # destroy the previous widgets if any
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        # create welcome frame
+        welcome_frame = tk.Frame(self.root)
+        welcome_frame.pack(fill=tk.BOTH, expand=True) # pack the frame into the window
 
+        # display application logo
+        image_label = Label(welcome_frame,image=self.logo)
+        image_label.pack(pady=20)
 
-# Main application window setup
-root=tk.Tk()
-root.geometry("800x700")
-root.title("Accountability Partner")
+        # add text below logo
+        quote = tk.Label(welcome_frame, text="""
+        We are what we repeatedly do… therefore excellence is not an act, but a habit.
+                        
+                        ~Aristotle
+                        
+        Track your habits today!""", font=("Arial", 12), wraplength=500, justify="center")
+        quote.pack(pady=10) # pack the label into the window with some padding
 
-# display application logo
-image = Image.open('AppLogo.png')
-image = image.resize((400,400)) # resize the image to fit the window
-photo = ImageTk.PhotoImage(image) # convert the image to a PhotoImage object
-logo = Label(root, image=photo, text="Accountability Partner logo") # create a label to display the image
-logo.image = photo # keep a reference to the image to prevent garbage collection
-logo.pack(pady=20) # pack the label into the window with some padding
+        # create a get started button to show the main interface
+        get_started_btn = ttk.Button(welcome_frame, text="Get Started", command=self.show_application_interface)
+        get_started_btn.pack(pady=20) # pack the button into the window with some padding
 
-# add text below logo
-quote = tk.Label(root, text="""
-We are what we repeatedly do… therefore excellence is not an act, but a habit.
-                 
-                 ~Aristotle
-                 
-Track your habits today!""", font=("Arial", 12), wraplength=500, justify="center")
-quote.pack(pady=10) # pack the label into the window with some padding
+        # main function to display the application's primary interface
+    def show_application_interface(self):
+        """
+        Displays the main application interface for the Accountability Partner app.
+        """
+        # destroy the welcome screen and create the main frame
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-main_frame = tk.Frame(root) # create a frame to hold the main content
-main_frame.pack(fill=tk.BOTH, expand=True) # pack the frame into the window
-main_frame.grid_rowconfigure(0, weight=1) # configure the row to expand with the window
+        main_frame = tk.Frame(self.root) # create a frame to hold the main content
+        main_frame.pack(fill=tk.BOTH, expand=True) # pack the frame into the window
+        main_frame.grid_rowconfigure(0, weight=1) # configure the row to expand with the window
 
-# create a get started button to show the main interface
-get_started_btn = ttk.Button(main_frame, text="Get Started", command=show_application_interface)
-get_started_btn.pack(pady=20) # pack the button into the window with some padding
+        # display application logo
+        image_label = Label(main_frame,image=self.logo)
+        image_label.pack(pady=20)
+        
+        # Add new daily habit button
+        add_habit_btn = tk.Button(main_frame, text = "Add New Daily Habit", width=25, command=self.open_habits)
+        add_habit_btn.pack() #display the button in the main frame
+
+        # Record today's activity button
+        record_activity_btn = tk.Button(main_frame, text = "Record Today's Activity", width=25)
+        record_activity_btn.pack() #display the button in the main frame
+
+        # Export data button
+        export_data_btn = tk.Button(main_frame, text = "Export habit data", width=25)
+        export_data_btn.pack() #display the button in the main frame
+
+    # function to open habits window
+    def open_habits(self):
+        """
+        Opens the Add New Habit window.
+        """
+        # hide the main window and open the habits window
+        self.root.withdraw()
+        habits_window = tk.Toplevel(root)  # create a new top-level window
+        Habits(habits_window, self.root)  # pass the new window and main window to the Habits class
 
 # run the main application loop
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()  # create the main application window
+    app = AccountabilityPartner(root)  # create an instance of the AccountabilityPartner class
+    root.mainloop()  # run the main application loop
