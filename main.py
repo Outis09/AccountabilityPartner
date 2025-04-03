@@ -90,15 +90,19 @@ class AccountabilityPartner:
         image_label.pack(pady=20)
         
         # Add new daily habit button
-        add_habit_btn = tk.Button(main_frame, text = "Add New Daily Habit", width=25, command=self.open_habits)
+        add_habit_btn = tk.Button(main_frame, text = "Create Habit", width=25, command=self.open_habits)
         add_habit_btn.pack() #display the button in the main frame
 
         # Record today's activity button
-        record_activity_btn = tk.Button(main_frame, text = "Record Today's Activity", width=25)
+        record_activity_btn = tk.Button(main_frame, text = "Log Activity", width=25)
         record_activity_btn.pack() #display the button in the main frame
 
+        # Analyze progress button
+        analyze_progress_btn = tk.Button(main_frame, text = "View Progress", width=25)
+        analyze_progress_btn.pack()
+
         # Export data button
-        export_data_btn = tk.Button(main_frame, text = "Export habit data", width=25)
+        export_data_btn = tk.Button(main_frame, text = "Download Report", width=25)
         export_data_btn.pack() #display the button in the main frame
 
     # function to open habits window
