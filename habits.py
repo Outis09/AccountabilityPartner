@@ -7,6 +7,7 @@ This module implements the functionality for adding a new habit to the user's li
 # import required libraries
 import tkinter as tk
 from tkinter import ttk,messagebox
+from tkcalendar import DateEntry  # For date selection
 import json 
 import os
 
@@ -32,8 +33,22 @@ class Habits:
         habit_prompt.pack(pady=10)
         new_habit_entry.pack(pady=10)
 
+        # start date
+        start_date_prompt = tk.Label(self.main_frame, text="When do you want to start?")
+        start_date_prompt.pack(pady=10)
+        # calendar
+        cal = DateEntry(self.main_frame, 
+                        width=12, 
+                        background='darkblue', 
+                        foreground='white', 
+                        borderwidth=2, 
+                        date_pattern="yyyy-mm-dd")
+        cal.pack(pady=10)
+        # variable to hold selected date
+        self.start_date = cal.get_date()
+
         # habit frequency
-        frequency_prompt = tk.Label(self.main_frame, text="Select Habit Frequency:")
+        frequency_prompt = tk.Label(self.main_frame, text="How often do you want to do this?")
         frequency_prompt.pack(pady=10)
         # create variable to store selected frequency and set default value
         self.frequency = tk.StringVar(value="Daily")
@@ -44,6 +59,7 @@ class Habits:
                             text=option, 
                             variable=self.frequency, 
                             value=option).pack(anchor=tk.W)
+            
 
         # file to store habit categories
         self.category_file = "categories.json"
@@ -77,7 +93,7 @@ class Habits:
         self.notes_frame = tk.Frame(self.main_frame)
         self.notes_frame.pack(pady=10)
         # notes label and entry field
-        notes_label = tk.Label(self.notes_frame, text="Enter notes/motivation for this habit:")
+        notes_label = tk.Label(self.notes_frame, text="Why is this habit important to you?:")
         notes_label.pack(pady=5)
         notes_entry = tk.Text(self.notes_frame, height=5, width=30)
         notes_entry.pack(pady=5)
