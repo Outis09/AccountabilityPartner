@@ -8,6 +8,7 @@ This module implements the functionality for adding a new habit to the user's li
 import tkinter as tk
 from tkinter import ttk,messagebox
 from tkcalendar import DateEntry  # For date selection
+from datetime import datetime, date
 import json 
 import os
 
@@ -37,15 +38,15 @@ class Habits:
         start_date_prompt = tk.Label(self.main_frame, text="When do you want to start?")
         start_date_prompt.pack(pady=10)
         # calendar
-        cal = DateEntry(self.main_frame, 
+        self.cal = DateEntry(self.main_frame, 
                         width=12, 
                         background='darkblue', 
                         foreground='white', 
                         borderwidth=2, 
                         date_pattern="yyyy-mm-dd")
-        cal.pack(pady=10)
+        self.cal.pack(pady=10)
         # variable to hold selected date
-        self.start_date = cal.get_date()
+        self.start_date = self.cal.get_date()
 
         # habit frequency
         frequency_prompt = tk.Label(self.main_frame, text="How often do you want to do this?")
@@ -98,6 +99,36 @@ class Habits:
         notes_entry = tk.Text(self.notes_frame, height=5, width=30)
         notes_entry.pack(pady=5)
 
+        # end date frame
+        self.end_date_frame  = tk.Frame(self.main_frame)
+        self.end_date_frame.pack(pady=10)
+        # add end date
+        end_date_prompt = tk.Label(self.end_date_frame, text="When do you want to end?")
+        end_date_prompt.pack(pady=10)
+
+        # end date calendar frame
+        self.end_date_cal_frame = tk.Frame(self.main_frame)
+        # today
+        today = date.today()
+        # end date calendar
+        self.end_date_cal = DateEntry(self.end_date_cal_frame, 
+                        width=12, 
+                        background='darkblue', 
+                        foreground='white', 
+                        borderwidth=2, 
+                        mindate=today,
+                        date_pattern="yyyy-mm-dd")
+        # end date status
+        self.end_date_status = tk.StringVar(value="Indefinitely")
+        # end date options
+        end_date_options = ["Indefinitely", "Specific Date"]
+        for option in end_date_options:
+            ttk.Radiobutton(self.main_frame,
+                            text=option, 
+                            variable=self.end_date_status, 
+                            value=option,
+                            command=self.on_end_date_toggle).pack(anchor=tk.W)
+
 
         # frame for final buttons
         self.buttons_frame = tk.Frame(self.main_frame)
@@ -107,6 +138,15 @@ class Habits:
         # button to go back to the main window
         tk.Button(self.buttons_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
+    
+    def on_end_date_toggle(self):
+        if self.end_date_status.get() == "Specific Date":
+            self.end_date_cal_frame.pack(after=self.end_date_frame,before=self.buttons_frame, pady=5)
+            self.end_date_cal.pack(in_=self.end_date_cal_frame,pady=5)
+        else:
+            self.end_date_cal_frame.pack_forget()
+            # self.end_date_cal.pack_forget()
+    
     # function to load categories from file
     def load_categories(self):
         if os.path.exists(self.category_file):
@@ -135,8 +175,9 @@ class Habits:
             self.custom_entry_label.pack(in_=self.cust_cat_frame,pady=5)
             self.custom_entry.pack(in_=self.cust_cat_frame,pady=5)
         else:
-            self.custom_entry_label.pack_forget()
-            self.custom_entry.pack_forget()
+            # self.custom_entry_label.pack_forget()
+            # self.custom_entry.pack_forget()
+            self.cust_cat_frame.pack_forget()
 
     def back_to_main_window(self):
         """
