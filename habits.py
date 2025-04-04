@@ -19,14 +19,35 @@ class Habits:
 
         # set window properties
         self.window.title(" Create Habit")
-        self.window.geometry("400x300")
+        self.window.geometry("600x300")
 
         # handle window close event
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        # create scrollable canvas
+        self.canvas = tk.Canvas(self.window, width=400, height=300)
+        # add scrollbar to the canvas
+        self.scrollbar = tk.Scrollbar(self.window, orient="vertical", command=self.canvas.yview)
+
         # center window content
-        self.main_frame = tk.Frame(self.window)
-        self.main_frame.pack(expand=True)
+        self.main_frame = tk.Frame(self.canvas)
+        # bind frame to update scrollregion when its size changes
+        self.main_frame.bind("<Configure>", 
+                             lambda e: self.canvas.configure(
+                                 scrollregion=self.canvas.bbox("all")
+                                 )
+                                 )
+        
+        # create a window in the canvas
+        self.inner_window = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
+        # self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.inner_window, width=e.width))
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # pack the canvas and scrollbar
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        # self.main_frame.pack(expand=True)
 
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
@@ -138,7 +159,11 @@ class Habits:
         # button to go back to the main window
         tk.Button(self.buttons_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
-    
+    def resize_canvas(self, event):
+        canvas_width = event.width
+        self.canvas.itemconfig(self.inner_window, width=canvas_width)
+
+
     def on_end_date_toggle(self):
         if self.end_date_status.get() == "Specific Date":
             self.end_date_cal_frame.pack(after=self.end_date_frame,before=self.buttons_frame, pady=5)
