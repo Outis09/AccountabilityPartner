@@ -32,6 +32,19 @@ class Habits:
         habit_prompt.pack(pady=10)
         new_habit_entry.pack(pady=10)
 
+        # habit frequency
+        frequency_prompt = tk.Label(self.main_frame, text="Select Habit Frequency:")
+        frequency_prompt.pack(pady=10)
+        # create variable to store selected frequency and set default value
+        self.frequency = tk.StringVar(value="Daily")
+        # frequency options
+        frequency_options = ["Daily", "Weekly", "Monthly"]
+        for option in frequency_options:
+            ttk.Radiobutton(self.main_frame,
+                            text=option, 
+                            variable=self.frequency, 
+                            value=option).pack(anchor=tk.W)
+
         # file to store habit categories
         self.category_file = "categories.json"
         # default categories
