@@ -60,6 +60,15 @@ class Habits:
         self.custom_entry_label = tk.Label(self.cust_cat_frame, text="Enter custom category name:")
         self.custom_entry = tk.Entry(self.cust_cat_frame)
 
+        # frame to hold notes/motivation
+        self.notes_frame = tk.Frame(self.main_frame)
+        self.notes_frame.pack(pady=10)
+        # notes label and entry field
+        notes_label = tk.Label(self.notes_frame, text="Enter notes/motivation for this habit:")
+        notes_label.pack(pady=5)
+        notes_entry = tk.Text(self.notes_frame, height=5, width=30)
+        notes_entry.pack(pady=5)
+
 
         # frame for final buttons
         self.buttons_frame = tk.Frame(self.main_frame)
@@ -93,7 +102,7 @@ class Habits:
     # function to present entry box if user selects "Other" category
     def on_category_select(self):
         if self.category.get() == "Other":
-            self.cust_cat_frame.pack(after=self.radio_frame,before=self.buttons_frame, pady=5)
+            self.cust_cat_frame.pack(after=self.radio_frame,before=self.notes_frame, pady=5)
             self.custom_entry_label.pack(in_=self.cust_cat_frame,pady=5)
             self.custom_entry.pack(in_=self.cust_cat_frame,pady=5)
         else:
