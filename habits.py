@@ -11,6 +11,7 @@ from tkcalendar import DateEntry  # For date selection
 from datetime import datetime, date
 import json 
 import os
+import textwrap
 
 class Habits:
     def __init__(self, window, main_window):
@@ -60,9 +61,9 @@ class Habits:
 
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
-        new_habit_entry = tk.Entry(self.main_frame)
+        self.new_habit_entry = tk.Entry(self.main_frame)
         habit_prompt.pack(pady=10)
-        new_habit_entry.pack(pady=10)
+        self.new_habit_entry.pack(pady=10)
 
         # start date
         start_date_prompt = tk.Label(self.main_frame, text="When do you want to start?")
@@ -89,7 +90,7 @@ class Habits:
             ttk.Radiobutton(self.main_frame,
                             text=option, 
                             variable=self.frequency, 
-                            value=option).pack(anchor=tk.W)
+                            value=option).pack()
             
 
         # file to store habit categories
@@ -113,7 +114,7 @@ class Habits:
                             text=category_name, 
                             variable=self.category, 
                             value=category_name, 
-                            command=self.on_category_select).pack(anchor=tk.W)
+                            command=self.on_category_select).pack()
         # frame to control where dynamic category entry field appears
         self.cust_cat_frame = tk.Frame(self.main_frame)
         # custom entry label and entry field
@@ -126,8 +127,8 @@ class Habits:
         # notes label and entry field
         notes_label = tk.Label(self.notes_frame, text="Why is this habit important to you?:")
         notes_label.pack(pady=5)
-        notes_entry = tk.Text(self.notes_frame, height=5, width=30)
-        notes_entry.pack(pady=5)
+        self.notes_entry = tk.Text(self.notes_frame, height=5, width=30)
+        self.notes_entry.pack(pady=5)
 
         # end date frame
         self.end_date_frame  = tk.Frame(self.main_frame)
@@ -157,14 +158,14 @@ class Habits:
                             text=option, 
                             variable=self.end_date_status, 
                             value=option,
-                            command=self.on_end_date_toggle).pack(anchor=tk.W)
+                            command=self.on_end_date_toggle).pack()
 
 
         # frame for final buttons
         self.buttons_frame = tk.Frame(self.main_frame)
         self.buttons_frame.pack(pady=10)
         # button to save habit
-        tk.Button(self.buttons_frame, text="Save Habit").pack()
+        tk.Button(self.buttons_frame, text="Save Habit", command=self.save_habit).pack()
         # button to go back to the main window
         tk.Button(self.buttons_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
@@ -229,6 +230,66 @@ class Habits:
             # self.custom_entry_label.pack_forget()
             # self.custom_entry.pack_forget()
             self.cust_cat_frame.pack_forget()
+
+    # on save habit button click
+    def save_habit(self):
+        habit = self.new_habit_entry.get()
+        start_date = self.start_date
+        frequency = self.frequency.get()
+        if self.category.get() == "Other":
+            category = self.custom_entry.get()
+        else:
+            category = self.category.get()
+        notes = self.notes_entry.get("1.0", tk.END).strip()
+        wrapped_notes = textwrap.fill(notes, width=50)  # Wrap notes to 50 characters
+        end_date_status = self.end_date_status.get()
+        if end_date_status == "Specific Date":
+            end_date = self.end_date_cal.get_date()
+        else:
+            end_date = None
+
+        # check if any mandatory field is empty
+        mandatory_fields = [habit, start_date, frequency, category]
+        # dictionary to hold corresponding field names
+        field_names = [
+            (habit, "Habit"),
+            (start_date, "Start Date"),
+            (frequency, "Frequency"),
+            (category, "Category")
+        ]
+        # missing fields
+        missing_fields = [label for value, label in field_names if not value]
+        # check if habit name is empty
+        if missing_fields:
+            messagebox.showerror("Error", f"{', '.join(missing_fields)} cannot be blank.")
+            return
+        
+        # preview habit details
+        habit_details = f"""
+Habit: {habit}
+
+Start Date: {start_date}
+
+Frequency: {frequency}
+
+Category: {category}
+
+Notes: {wrapped_notes if notes else "None"}
+
+End Date: {end_date if end_date else "Indefinitely"}
+        """
+        
+        # confirmation dialog
+        if messagebox.askokcancel("Confirm Habit", habit_details):
+            # save custom category if user entered one
+            if self.custom_entry.get():
+                self.save_custom_category(self.custom_entry.get())
+            # save habit to file (or database)
+            # Here you would typically save the habit to a database or a file
+            messagebox.showinfo("Success", "Habit saved successfully!")
+            self.window.destroy()
+            self.main_window.deiconify()
+
 
     def back_to_main_window(self):
         """
