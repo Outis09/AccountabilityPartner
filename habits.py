@@ -19,35 +19,41 @@ class Habits:
 
         # set window properties
         self.window.title(" Create Habit")
-        self.window.geometry("600x300")
+        self.window.geometry("400x300")
 
         # handle window close event
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # create scrollable canvas
-        self.canvas = tk.Canvas(self.window, width=400, height=300)
-        # add scrollbar to the canvas
-        self.scrollbar = tk.Scrollbar(self.window, orient="vertical", command=self.canvas.yview)
-
-        # center window content
-        self.main_frame = tk.Frame(self.canvas)
-        # bind frame to update scrollregion when its size changes
-        self.main_frame.bind("<Configure>", 
-                             lambda e: self.canvas.configure(
-                                 scrollregion=self.canvas.bbox("all")
-                                 )
-                                 )
+        # Create container frame
+        container = tk.Frame(self.window)
+        container.pack(fill="both", expand=True)
         
-        # create a window in the canvas
-        self.inner_window = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
-        # self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.inner_window, width=e.width))
+        # Create canvas with scrollbar
+        self.canvas = tk.Canvas(container)
+        self.scrollbar = tk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
+        
+        # Configure canvas
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
-        # pack the canvas and scrollbar
-        self.canvas.pack(side="left", fill="both", expand=True)
+        
+        # Pack scrollbar FIRST (important)
         self.scrollbar.pack(side="right", fill="y")
-
-        # self.main_frame.pack(expand=True)
+        # Then pack canvas
+        self.canvas.pack(side="left", fill="both", expand=True)
+        
+        # Create main frame inside canvas
+        self.main_frame = tk.Frame(self.canvas)
+        
+        # Add main frame to canvas
+        self.inner_window = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
+        
+        # Force a minimum width on the main_frame
+        self.main_frame.configure(width=400)  # Set minimum width
+        
+        # Update scrollregion when frame changes
+        self.main_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        
+        # Make inner window adjust to canvas width
+        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.inner_window, width=e.width))
 
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
@@ -162,6 +168,7 @@ class Habits:
     def resize_canvas(self, event):
         canvas_width = event.width
         self.canvas.itemconfig(self.inner_window, width=canvas_width)
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 
     def on_end_date_toggle(self):
