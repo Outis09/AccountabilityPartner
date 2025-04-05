@@ -55,6 +55,9 @@ class Habits:
         # Make inner window adjust to canvas width
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.inner_window, width=e.width))
 
+        # bind mouse wheel to scroll the canvas with mouse/touchpad
+        self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
+
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
         new_habit_entry = tk.Entry(self.main_frame)
@@ -165,10 +168,26 @@ class Habits:
         # button to go back to the main window
         tk.Button(self.buttons_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
-    def resize_canvas(self, event):
-        canvas_width = event.width
-        self.canvas.itemconfig(self.inner_window, width=canvas_width)
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def on_mouse_wheel(self, event):
+        "Handle mouse when scrolling"
+        # if event.num == 4 or event.delta > 0:
+        #     # scroll up
+        #     self.canvas.yview_scroll(-1, "units")
+        # elif event.num == 5 or event.delta < 0:
+        #     # scroll down
+        #     self.canvas.yview_scroll(1, "units")
+        # else:
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    
+    # def bind_mouse_wheel(self, widget):
+    #     "Bind mouse wheel to scroll the canvas with mouse/touchpad"
+    #     widget.bind("<Mousewheel>",self.on_mouse_wheel)
+
+    # def resize_canvas(self, event):
+    #     canvas_width = event.width
+    #     self.canvas.itemconfig(self.inner_window, width=canvas_width)
+    #     self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 
     def on_end_date_toggle(self):
