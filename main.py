@@ -16,6 +16,7 @@ import os  # For interacting with the operating system
 from pathlib import Path  # For managing file paths
 
 from habits import Habits  # Importing the Habits class from the habits module
+from db import init_db
 
 class AccountabilityPartner:
     """
@@ -34,6 +35,9 @@ class AccountabilityPartner:
 
         # show welcome screen
         self.show_welcome_screen()
+
+        # initialize db
+        init_db.initialize_database()
 
     def load_and_resize_image(self, image_path, size):
         # load image
