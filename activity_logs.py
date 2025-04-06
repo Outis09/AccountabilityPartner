@@ -89,9 +89,29 @@ class Activity:
         self.btns_frame = tk.Frame(self.main_frame)
         self.btns_frame.pack(pady=10)
         # save activity button
-        tk.Button(self.btns_frame, text="Save Activity").pack()
+        tk.Button(self.btns_frame, text="Save Activity", command=self.save_activity).pack()
         # back to main window button
         tk.Button(self.btns_frame, text="Back to Main Window", command=lambda: hp.back_to_main_window(self)).pack()
+
+    def save_activity(self):
+        """Save activity by inserting entered values into db, after checking for nulls"""
+        category = self.selected_cat.get()
+        habit = self.selected_habit.get()
+        activity_date = self.calendar.get_date()
+        comments = self.activity_comments.get("1.0", tk.END).strip()
+
+        # list of tuples to hold corresponding field names
+        fields = [
+            (category, "Category"),
+            (habit, "Habit"),
+            (activity_date, "Activity Date")
+        ]
+        # missing fields
+        missing = [label for value, label in fields if not value]
+        # check for any null values
+        if missing:
+            messagebox.showerror("Error", f"{', '.join(missing)} cannot be blank.")
+            return
 
 
 
