@@ -63,5 +63,20 @@ class ScrollableFrame:
     def get_frame(self):
         "Return the inner frame where widgets should be placed"
         return self.main_frame
+    
+def on_closing(self):
+    """
+    Handle the window close event.
+    """
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        self.window.destroy()
+        self.main_window.deiconify()
+
+def back_to_main_window(self):
+    """
+    Close the current window and return to the main window.
+    """
+    self.window.destroy()
+    self.main_window.deiconify()
 
 
