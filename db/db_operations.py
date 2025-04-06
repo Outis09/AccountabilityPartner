@@ -31,11 +31,32 @@ def get_categories():
     cursor.execute("""
             SELECT category 
             FROM habits 
-            WHERE end_date IS NULL OR end_date < current_timestamp
+            WHERE end_date IS NULL OR end_date > current_timestamp
     """)
     valid_categories = [row[0] for row in cursor.fetchall()]
     # commit changes
     conn.commit()
     conn.close()
     return valid_categories
+
+def get_habits(category):
+    """Get habits that fall under a category"""
+    # connect to db
+    conn = sqlite3.connect(db)
+    # create cursor for executing queries
+    cursor = conn.cursor()
+    # query to get categories
+    cursor.execute("""
+            SELECT name 
+            FROM habits 
+            WHERE category = (?) AND (end_date IS NULL OR end_date > current_timestamp)
+    """, (category,))
+    # store selected habits
+    selected_habits = [row[0] for row in cursor.fetchall()]
+    # commit changes and close connection
+    conn.commit()
+    conn.close()
+    return selected_habits
+
+
 
