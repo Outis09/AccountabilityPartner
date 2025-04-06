@@ -12,6 +12,7 @@ from datetime import datetime, date
 import json 
 import os
 import textwrap
+from db import db_operations
 
 class Habits:
     def __init__(self, window, main_window):
@@ -284,8 +285,9 @@ End Date: {end_date if end_date else "Indefinitely"}
             # save custom category if user entered one
             if self.custom_entry.get():
                 self.save_custom_category(self.custom_entry.get())
-            # save habit to file (or database)
-            # Here you would typically save the habit to a database or a file
+            # save habit to database
+            db_operations.insert_habit(habit, start_date, frequency,category, notes, end_date)
+
             messagebox.showinfo("Success", "Habit saved successfully!")
             self.window.destroy()
             self.main_window.deiconify()
