@@ -97,7 +97,7 @@ class Habits:
         # file to store habit categories
         self.category_file = "categories.json"
         # default categories
-        self.default_categories = ["Health", "Productivity", "Finance", "Learning", "Other"]
+        self.default_categories = ["Health", "Productivity", "Finance", "Learning"]
 
         # habit category
         category_prompt = tk.Label(self.main_frame, text="Select Habit Category:")
@@ -205,9 +205,11 @@ class Habits:
         if os.path.exists(self.category_file):
             with open(self.category_file, 'r') as file:
                 saved = json.load(file)
-            return list(set(self.default_categories + saved))
+            cats = list(set(self.default_categories + saved))
         else:
-            return self.default_categories
+            cats = self.default_categories.append("Other")
+        cats.append("Other")
+        return cats
         
     # function to save new category to file
     def save_custom_category(self,category_name):
