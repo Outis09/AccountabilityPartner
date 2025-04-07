@@ -20,7 +20,7 @@ class Habits:
         self.main_window = main_window
 
         # set window properties
-        self.window.title(" Create Habit")
+        self.window.title("Create Habit")
         self.window.geometry("400x300")
 
         # handle window close event
@@ -37,9 +37,9 @@ class Habits:
         # Configure canvas
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
-        # Pack scrollbar FIRST (important)
+        # Pack scrollbar first
         self.scrollbar.pack(side="right", fill="y")
-        # Then pack canvas
+        # pack canvas
         self.canvas.pack(side="left", fill="both", expand=True)
         
         # Create main frame inside canvas
@@ -62,7 +62,7 @@ class Habits:
 
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
-        self.new_habit_entry = tk.Entry(self.main_frame)
+        self.new_habit_entry = tk.Entry(self.main_frame, width=30)
         habit_prompt.pack(pady=10)
         self.new_habit_entry.pack(pady=10)
 
@@ -93,6 +93,22 @@ class Habits:
                             variable=self.frequency, 
                             value=option).pack()
             
+        # habit tracking
+        tracking_prompt = tk.Label(self.main_frame,text="How do you want to track this habit?")
+        tracking_prompt.pack()
+        # tracking options
+        self.tracking_options = ["Yes/No (Completed or not)",
+                                 " Count (Number-based)",
+                                 "Time-based (Minutes/hours)",
+                                 "Rating/Mood-based"]
+        # variable to hold tracking type
+        self.tracking_type = tk.StringVar()
+        # radio to display tracking options
+        for option in self.tracking_options:
+            ttk.Radiobutton(self.main_frame,
+                            text=option,
+                            variable=self.tracking_type,
+                            value=option).pack()
 
         # file to store habit categories
         self.category_file = "categories.json"
@@ -253,7 +269,7 @@ class Habits:
 
         # check if any mandatory field is empty
         mandatory_fields = [habit, start_date, frequency, category]
-        # dictionary to hold corresponding field names
+        # list to hold corresponding field names
         field_names = [
             (habit, "Habit"),
             (start_date, "Start Date"),
