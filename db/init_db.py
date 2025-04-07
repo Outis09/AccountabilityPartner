@@ -17,6 +17,7 @@ def initialize_database():
                    start_date TEXT,
                    frequency TEXT,
                    category TEXT,
+                   tracking_type TEXT,
                    notes TEXT,
                    end_date TEXT, 
                    created_at TEXT NOT NULL DEFAULT current_timestamp
