@@ -98,9 +98,8 @@ class Habits:
         tracking_prompt.pack()
         # tracking options
         self.tracking_options = ["Yes/No (Completed or not)",
-                                 " Count (Number-based)",
-                                 "Time-based (Minutes/hours)",
-                                 "Rating/Mood-based"]
+                                 "Count (Number-based)",
+                                 "Duration (Minutes/hours)"]
         # variable to hold tracking type
         self.tracking_type = tk.StringVar()
         # radio to display tracking options
@@ -108,8 +107,17 @@ class Habits:
             ttk.Radiobutton(self.main_frame,
                             text=option,
                             variable=self.tracking_type,
-                            value=option).pack()
+                            value=option,
+                            command=self.tracking_display).pack()
 
+        # goal setting prompt
+        self.yes_no_prompt = tk.Label(self.main_frame, text="Goals with this track type are automatically expected to be completed at least once per stated duration")
+        # set goals for counts
+        self.count_goals = tk.Label(self.main_frame, text="How many times do you want to do this?")
+        # set goals for duration
+        self.duration_goals = tk.Label(self.main_frame, text="How many minutes do you want to spend on this?")
+        
+        
         # file to store habit categories
         self.category_file = "categories.json"
         # default categories
@@ -255,6 +263,7 @@ class Habits:
         habit = self.new_habit_entry.get()
         start_date = self.start_date
         frequency = self.frequency.get()
+        tracking = self.tracking_type.get()
         if self.category.get() == "Other":
             category = self.custom_entry.get()
         else:
@@ -268,12 +277,13 @@ class Habits:
             end_date = None
 
         # check if any mandatory field is empty
-        mandatory_fields = [habit, start_date, frequency, category]
+        mandatory_fields = [habit, start_date, frequency, tracking, category]
         # list to hold corresponding field names
         field_names = [
             (habit, "Habit"),
             (start_date, "Start Date"),
             (frequency, "Frequency"),
+            (tracking, "Tracking Type"),
             (category, "Category")
         ]
         # missing fields
@@ -291,6 +301,8 @@ Start Date: {start_date}
 
 Frequency: {frequency}
 
+Tracking Type: {tracking}
+
 Category: {category}
 
 Notes: {wrapped_notes if notes else "None"}
@@ -304,12 +316,26 @@ End Date: {end_date if end_date else "Indefinitely"}
             if self.custom_entry.get():
                 self.save_custom_category(self.custom_entry.get())
             # save habit to database
-            db_operations.insert_habit(habit, start_date, frequency,category, notes, end_date)
+            db_operations.insert_habit(habit, start_date, frequency,tracking, category, notes, end_date)
 
             messagebox.showinfo("Success", "Habit saved successfully!")
             self.window.destroy()
             self.main_window.deiconify()
 
+    def tracking_display(self):
+        # display goal prompts when tracking is not yes/no
+        if self.tracking_type.get() == "Yes/No (Completed or not)":
+            self.yes_no_prompt.pack()
+            self.count_goals.pack_forget()
+            self.duration_goals.pack_forget()
+        elif self.tracking_type.get() == 'Count (Number-based)':
+            self.count_goals.pack()
+            self.yes_no_prompt.pack_forget()
+            self.duration_goals.pack_forget()
+        elif self.tracking_type.get() == 'Duration (Minutes/hours)':
+            self.duration_goals.pack()
+            self.count_goals.pack_forget()
+            self.yes_no_prompt.pack()
 
     def back_to_main_window(self):
         """
