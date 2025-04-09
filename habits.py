@@ -109,13 +109,21 @@ class Habits:
                             variable=self.tracking_type,
                             value=option,
                             command=self.tracking_display).pack()
-
-        # goal setting prompt
-        self.yes_no_prompt = tk.Label(self.main_frame, text="Goals with this track type are automatically expected to be completed at least once per stated duration")
+        # variable to hold goal
+        self.habit_goal = tk.StringVar()       
+        # frame to hold goals
+        self.goal_frame = tk.Frame(self.main_frame)
+        # set goals for yes/no habits
+        self.yes_no_prompt = tk.Label(self.goal_frame, text="""
+                                      Goals with this track type are automatically expected
+                                      to be completed at least once
+                                      per chosen frequency""")
         # set goals for counts
-        self.count_goals = tk.Label(self.main_frame, text="How many times do you want to do this?")
+        self.count_goals = tk.Label(self.goal_frame, text="How many times do you want to do this?")
         # set goals for duration
-        self.duration_goals = tk.Label(self.main_frame, text="How many minutes do you want to spend on this?")
+        self.duration_goals = tk.Label(self.goal_frame, text="How many minutes do you want to spend on this?")
+        # entry for goal
+        self.goal = tk.Entry(self.goal_frame)
         
         
         # file to store habit categories
@@ -123,16 +131,17 @@ class Habits:
         # default categories
         self.default_categories = ["Health", "Productivity", "Finance", "Learning"]
 
-        # habit category
-        category_prompt = tk.Label(self.main_frame, text="Select Habit Category:")
-        category_prompt.pack(pady=10)
+ 
         # create variable to store selected category
         self.category = tk.StringVar()
         # categories
         categories = self.load_categories()
         # frame for radio buttons
-        self.radio_frame = tk.Frame(self.main_frame)
-        self.radio_frame.pack()
+        self.category_frame = tk.Frame(self.main_frame)
+        self.category_frame.pack()
+        # habit category
+        category_prompt = tk.Label(self.category_frame, text="Select Habit Category:")
+        category_prompt.pack(pady=10)
         # create radio buttons for each category
         for category_name in categories:
             ttk.Radiobutton(self.main_frame, 
@@ -205,15 +214,6 @@ class Habits:
         #     self.canvas.yview_scroll(1, "units")
         # else:
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    
-    # def bind_mouse_wheel(self, widget):
-    #     "Bind mouse wheel to scroll the canvas with mouse/touchpad"
-    #     widget.bind("<Mousewheel>",self.on_mouse_wheel)
-
-    # def resize_canvas(self, event):
-    #     canvas_width = event.width
-    #     self.canvas.itemconfig(self.inner_window, width=canvas_width)
-    #     self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 
     def on_end_date_toggle(self):
@@ -250,7 +250,7 @@ class Habits:
     # function to present entry box if user selects "Other" category
     def on_category_select(self):
         if self.category.get() == "Other":
-            self.cust_cat_frame.pack(after=self.radio_frame,before=self.notes_frame, pady=5)
+            self.cust_cat_frame.pack(after=self.category_frame,before=self.notes_frame, pady=5)
             self.custom_entry_label.pack(in_=self.cust_cat_frame,pady=5)
             self.custom_entry.pack(in_=self.cust_cat_frame,pady=5)
         else:
@@ -275,6 +275,10 @@ class Habits:
             end_date = self.end_date_cal.get_date()
         else:
             end_date = None
+        if self.tracking_type != "Yes/No (Completed or not)":
+            goal = self.goal.get()
+        else:
+            goal = None
 
         # check if any mandatory field is empty
         mandatory_fields = [habit, start_date, frequency, tracking, category]
@@ -288,10 +292,19 @@ class Habits:
         ]
         # missing fields
         missing_fields = [label for value, label in field_names if not value]
+        # append goal label if tarcking type is not yes/no
+        if self.tracking_type.get() != "Yes/No (Completed or not)" and not goal:
+            missing_fields.append("Goal")
         # check if habit name is empty
         if missing_fields:
             messagebox.showerror("Error", f"{', '.join(missing_fields)} cannot be blank.")
             return
+        
+        # validate goal
+        if not goal.isdigit():
+            messagebox.showerror("Error", "Enter a valid goal")
+            return
+            
         
         # preview habit details
         habit_details = f"""
@@ -302,6 +315,8 @@ Start Date: {start_date}
 Frequency: {frequency}
 
 Tracking Type: {tracking}
+
+Goal: {goal}
 
 Category: {category}
 
@@ -323,19 +338,25 @@ End Date: {end_date if end_date else "Indefinitely"}
             self.main_window.deiconify()
 
     def tracking_display(self):
+        self.goal_frame.pack(before=self.category_frame)
         # display goal prompts when tracking is not yes/no
         if self.tracking_type.get() == "Yes/No (Completed or not)":
+            self.goal.pack_forget()
             self.yes_no_prompt.pack()
             self.count_goals.pack_forget()
             self.duration_goals.pack_forget()
         elif self.tracking_type.get() == 'Count (Number-based)':
+            self.goal.pack_forget()
             self.count_goals.pack()
+            self.goal.pack()
             self.yes_no_prompt.pack_forget()
             self.duration_goals.pack_forget()
         elif self.tracking_type.get() == 'Duration (Minutes/hours)':
+            self.goal.pack_forget()
             self.duration_goals.pack()
+            self.goal.pack()
             self.count_goals.pack_forget()
-            self.yes_no_prompt.pack()
+            self.yes_no_prompt.pack_forget()
 
     def back_to_main_window(self):
         """
