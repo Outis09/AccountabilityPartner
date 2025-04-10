@@ -31,6 +31,9 @@ class Activity:
         # create final buttons
         self.create_final_buttons()
 
+        # variable for confirming save
+        self.confirmed_save = False
+
     def create_widgets(self):
         """Create widgets for frame"""
         # show valid categories
@@ -79,6 +82,9 @@ class Activity:
         self.count_prompt = tk.Label(self.activity_frame,text="How many times did you do this")
         # radio for yes/no habits
         self.activity = tk.StringVar()
+        self.yes_radio = ttk.Radiobutton(self.activity_frame, text="Yes", variable=self.activity, value="yes")
+        self.no_radio = ttk.Radiobutton(self.activity_frame, text="No", variable=self.activity,value="no")
+        self.other_tracking_entry = tk.Entry(self.activity_frame)
 
 
         # rating frame
@@ -110,18 +116,28 @@ class Activity:
     def on_habit_select(self, event=None):
         """Generate appropriate prompt for user entry based on selected habit"""
         selected_habit = self.selected_habit.get()
-        tracking_type = self.habit_details.get(selected_habit)
+        self.tracking_type = self.habit_details.get(selected_habit)
         if selected_habit:
             self.activity_frame.pack(before=self.rating_frame)
-            if tracking_type == "Daily":
+            if self.tracking_type == "Daily":
                 self.yes_no_prompts.pack()
+                self.yes_radio.pack()
+                self.no_radio.pack()
                 self.count_prompt.pack_forget()
                 self.duration_prompts.pack_forget()
-            elif tracking_type == "Weekly":
+                self.other_tracking_entry.pack_forget()
+            elif self.tracking_type == "Weekly":
                 self.count_prompt.pack()
+                self.other_tracking_entry.pack()
+                self.yes_radio.pack_forget()
+                self.no_radio.pack_forget()
                 self.yes_no_prompts.pack_forget()
-            elif tracking_type == "Monthly":
+                self.duration_prompts.pack_forget()
+            elif self.tracking_type == "Monthly":
                 self.duration_prompts.pack()
+                self.other_tracking_entry.pack()
+                self.yes_radio.pack_forget()
+                self.no_radio.pack_forget()
                 self.yes_no_prompts.pack_forget()
                 self.count_prompt.pack_forget()
     
@@ -140,19 +156,43 @@ class Activity:
         category = self.selected_cat.get()
         habit = self.selected_habit.get()
         activity_date = self.calendar.get_date()
+        if self.tracking_type == "Daily":
+            activity = self.activity.get()
+        else:
+            activity = self.other_tracking_entry.get()
+        rating = self.rating_entry.get()
         comments = self.activity_comments.get("1.0", tk.END).strip()
 
         # list of tuples to hold corresponding field names
         fields = [
             (category, "Category"),
             (habit, "Habit"),
-            (activity_date, "Activity Date")
+            (activity_date, "Activity Date"),
+            (activity, "Tracking Input"),
+            (rating, "Rating")
         ]
         # missing fields
         missing = [label for value, label in fields if not value]
         # check for any null values
         if missing:
             messagebox.showerror("Error", f"{', '.join(missing)} cannot be blank.")
+            return
+        
+        if self.tracking_type != "Daily" and not activity.isdigit():
+            messagebox.showerror("Error", "Please enter a valid value for tracking input")
+            return
+        elif self.tracking_type != "Daily" and int(activity) <= 0:
+            messagebox.showerror("Error", "Tracking input cannot be zero or negative")
+            return
+        elif self.tracking_type == "Weekly" and int(activity) >= 300 and self.confirmed_save == False:
+            warning = messagebox.askyesno("High Value Input", "The minutes you entered is unusually large. Are you sure you want to continue?")
+            if warning:
+                self.confirmed_save = True
+            return
+        elif self.tracking_type == "Monthly" and int(activity) > 10 and self.confirmed_save == False:
+            warning = messagebox.askyesno("High Value Input", "The number of times you performed this activity is unusually high. Are you sure you want to continue?")
+            if warning:
+                self.confirmed_save = True
             return
 
 # run the main application loop
