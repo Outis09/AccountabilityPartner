@@ -194,6 +194,11 @@ class Activity:
             if warning:
                 self.confirmed_save = True
             return
+        
+        # validate rating value
+        if not rating.isdigit() or int(rating) <= 0 or int(rating) > 5:
+            messagebox.showerror("Invalid Input", "Rating must be a number between 1 and 5")
+            return
 
 # run the main application loop
 if __name__ == "__main__":
