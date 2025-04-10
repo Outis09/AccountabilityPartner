@@ -47,16 +47,21 @@ def get_habits(category):
     cursor = conn.cursor()
     # query to get categories
     cursor.execute("""
-            SELECT name 
+            SELECT name, frequency 
             FROM habits 
             WHERE category = (?) AND (end_date IS NULL OR end_date > current_timestamp)
     """, (category,))
     # store selected habits
-    selected_habits = [row[0] for row in cursor.fetchall()]
+    rows = cursor.fetchall()
     # commit changes and close connection
     conn.commit()
     conn.close()
-    return selected_habits
+    # dict with habit details
+    habit_details = {name: frequency for name,frequency in rows}
+    return habit_details
+
+
+    
 
 
 
