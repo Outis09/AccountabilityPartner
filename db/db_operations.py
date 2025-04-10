@@ -1,5 +1,6 @@
 # import sqlite for db executions
 import sqlite3
+from tkinter import messagebox
 
 # db name
 db = 'accountability.db'
@@ -90,6 +91,19 @@ def get_habit_id(habit):
     id = [row[0] for row in cursor.fetchall()]
     conn.close()
     return id
+
+def safe_db_call(db_function, *args, success_message="Operation Successful"):
+    try:
+        db_function(*args)
+        messagebox.showinfo("Success", success_message)
+    except sqlite3.IntegrityError as e:
+        messagebox.showerror("Integrity Error", f"Data constraint violated: {e}")
+    except sqlite3.OperationalError as e:
+        messagebox.showerror("Operational Error", f"Database error: {e}")
+    except sqlite3.ProgrammingError as e:
+        messagebox.showerror("Programming Error", f"Code isse: {e}")
+    except sqlite3.Error as e:
+        messagebox.showerror("Database Error", f"An unexpected error occurred: {e}")
 
 
     
