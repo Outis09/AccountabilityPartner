@@ -203,6 +203,9 @@ class Habits:
         # button to go back to the main window
         tk.Button(self.buttons_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
+        # variable of if user has already tried submitting
+        self.warning_confirm = False
+
 
     def on_mouse_wheel(self, event):
         "Handle mouse when scrolling"
@@ -275,10 +278,15 @@ class Habits:
             end_date = self.end_date_cal.get_date()
         else:
             end_date = None
-        if self.tracking_type != "Yes/No (Completed or not)":
+        if tracking != "Yes/No (Completed or not)":
             goal = self.goal.get()
+            if tracking == "Count (Number-based)":
+                goal_units = "times"
+            elif tracking == "Duration (Minutes/hours)":
+                goal_units == "minutes"            
         else:
             goal = None
+            goal_units = None
 
         # check if any mandatory field is empty
         mandatory_fields = [habit, start_date, frequency, tracking, category]
@@ -303,6 +311,19 @@ class Habits:
         # validate goal
         if not goal.isdigit():
             messagebox.showerror("Error", "Enter a valid goal")
+            return
+        elif float(goal) <= 0:
+            messagebox.showerror("Error","Goal cannot be zero or negative")
+            return
+        elif tracking == "Count (Number-based)" and float(goal) > 10 and self.warning_confirm == False:
+            warning = messagebox.askyesno("High Value Warning","The value you entered is unusually high. Are you sure you want to continue?")
+            if warning:
+                self.warning_confirm = True
+            return
+        elif tracking == "Duration (Minutes/hours)" and float(goal) > 300 and self.warning_confirm == False:
+            warning = messagebox.askyesno("High Value Warning","The value you entered is unusually high. Are you sure you want to continue?")
+            if warning:
+                self.warning_confirm = True
             return
             
         
@@ -331,7 +352,7 @@ End Date: {end_date if end_date else "Indefinitely"}
             if self.custom_entry.get():
                 self.save_custom_category(self.custom_entry.get())
             # save habit to database
-            db_operations.insert_habit(habit, start_date, frequency,tracking, category, notes, end_date)
+            db_operations.insert_habit(habit, start_date, frequency,tracking,goal, goal_units, category, notes, end_date)
 
             messagebox.showinfo("Success", "Habit saved successfully!")
             self.window.destroy()
