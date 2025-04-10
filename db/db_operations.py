@@ -5,7 +5,7 @@ import sqlite3
 db = 'accountability.db'
 
 # function to save habits
-def insert_habit(name, start_date, frequency, tracking, category, notes, end_date):
+def insert_habit(name, start_date, frequency, tracking,goal, goal_units, category, notes, end_date):
     # connect to db
     conn = sqlite3.connect(db)
     # create cursor for executing queries
@@ -15,7 +15,7 @@ def insert_habit(name, start_date, frequency, tracking, category, notes, end_dat
     cursor.execute("""
             INSERT INTO habits(name, start_date, frequency, tracking_type, category, notes, end_date)
             VALUES (?,?,?,?,?,?,?)
-    """, (name, start_date, frequency, tracking, category, notes, end_date))
+    """, (name, start_date, frequency, tracking,goal, goal_units, category, notes, end_date))
 
     # commit changes
     conn.commit()
@@ -59,6 +59,22 @@ def get_habits(category):
     # dict with habit details
     habit_details = {name: frequency for name,frequency in rows}
     return habit_details
+
+def get_habit_id(habit):
+    """Get habit id for a given habit"""
+    # connect to db
+    conn = sqlite3.connect(db)
+    # create cursor for executing categories
+    cursor = conn.cursor()
+    # query to get habit_id
+    cursor.execute("""
+        SELECT habit_id
+        FROM habits
+        WHERE name = (?)
+        """, (habit,))
+    id = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return id
 
 
     
