@@ -52,6 +52,7 @@ class Activity:
         self.selected_habit = tk.StringVar()
         self.habit_dropdown = ttk.Combobox(self.main_frame,textvariable=self.selected_habit, width=30)
         self.habit_dropdown.pack()
+        self.habit_dropdown.bind("<<ComboboxSelected>>", self.on_habit_select)
 
 
         # activity date
@@ -70,22 +71,63 @@ class Activity:
                                   )
         self.calendar.pack(pady=10)
 
+        # activity frame
+        self.activity_frame = tk.Frame(self.main_frame)
+        # activity prompts
+        self.yes_no_prompts = tk.Label(self.activity_frame,text="Did you complete this activity?")
+        self.duration_prompts = tk.Label(self.activity_frame,text="How many minutes did you spend on this activity?")
+        self.count_prompt = tk.Label(self.activity_frame,text="How many times did you do this")
+        # radio for yes/no habits
+        self.activity = tk.StringVar()
+
+
+        # rating frame
+        self.rating_frame = tk.Frame(self.main_frame)
+        self.rating_frame.pack()
+        # rating prompt
+        self.rating_prompt = tk.Label(self.rating_frame, text="On a scale of 1-5, How would you rate your productivity during this activity?")
+        self.rating_prompt.pack()
+        # rating entry
+        self.rating_entry = tk.Entry(self.rating_frame)
+        self.rating_entry.pack()
+
         # add notes
-        activity_notes = tk.Label(self.main_frame, text="Any comments?")
+        self.notes_frame = tk.Frame(self.main_frame)
+        self.notes_frame.pack()
+        activity_notes = tk.Label(self.notes_frame, text="Any comments?")
         activity_notes.pack(pady=5)
-        self.activity_comments = tk.Text(self.main_frame, height=5, width=30)
+        self.activity_comments = tk.Text(self.notes_frame, height=5, width=30)
         self.activity_comments.pack(pady=5)
     
     def update_habits_dropdown(self,event):
         """Update the habits dropdown when a category is selected"""
         selected_category = self.selected_cat.get()
         if selected_category:
-            self.selected_habits = db.get_habits(selected_category)
+            self.habit_details = db.get_habits(selected_category)
+            self.selected_habits = list(self.habit_details.keys())
             self.habit_dropdown['values'] = self.selected_habits
+
+    def on_habit_select(self, event=None):
+        """Generate appropriate prompt for user entry based on selected habit"""
+        selected_habit = self.selected_habit.get()
+        tracking_type = self.habit_details.get(selected_habit)
+        if selected_habit:
+            self.activity_frame.pack(before=self.rating_frame)
+            if tracking_type == "Daily":
+                self.yes_no_prompts.pack()
+                self.count_prompt.pack_forget()
+                self.duration_prompts.pack_forget()
+            elif tracking_type == "Weekly":
+                self.count_prompt.pack()
+                self.yes_no_prompts.pack_forget()
+            elif tracking_type == "Monthly":
+                self.duration_prompts.pack()
+                self.yes_no_prompts.pack_forget()
+                self.count_prompt.pack_forget()
     
     def create_final_buttons(self):
         """Create final buttons for frame"""
-                # frame for final buttons
+        # frame for final buttons
         self.btns_frame = tk.Frame(self.main_frame)
         self.btns_frame.pack(pady=10)
         # save activity button
@@ -113,12 +155,8 @@ class Activity:
             messagebox.showerror("Error", f"{', '.join(missing)} cannot be blank.")
             return
 
-
-
-
-
 # run the main application loop
 if __name__ == "__main__":
     root = tk.Tk()  # create the main application window
-    app = Activity(root)  # create an instance of the AccountabilityPartner class
+    app = Activity(root)  # create an instance of the Activity class
     root.mainloop()  # run the main application loop
