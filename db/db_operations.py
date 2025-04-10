@@ -21,6 +21,21 @@ def insert_habit(name, start_date, frequency, tracking,goal, goal_units, categor
     conn.commit()
     conn.close()
 
+def insert_activity(habit_id,log_date,activity, rating, log_notes):
+    # connect to db
+    conn = sqlite3.connect(db)
+    # create cursor for executing queries
+    cursor = conn.cursor()
+    # insert values
+    cursor.execute("""
+                INSERT INTO activity_logs(habit_id, log_date, activity, rating,log_notes)
+                   VALUES (?,?,?,?,?)
+        """, (habit_id, log_date, activity, rating, log_notes))
+    # commit changes
+    conn.commit()
+    # close connection
+    conn.close()
+
 def get_categories():
     """Get valid categories from database"""
     # connect to db
