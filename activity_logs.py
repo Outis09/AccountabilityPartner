@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 from datetime import date
+import textwrap
 import helper as hp
 from db import db_operations as db
 
@@ -155,6 +156,7 @@ class Activity:
         """Save activity by inserting entered values into db, after checking for nulls"""
         category = self.selected_cat.get()
         habit = self.selected_habit.get()
+        habit_id = db.get_habit_id(habit)
         activity_date = self.calendar.get_date()
         if self.tracking_type == "Daily":
             activity = self.activity.get()
@@ -162,6 +164,8 @@ class Activity:
             activity = self.other_tracking_entry.get()
         rating = self.rating_entry.get()
         comments = self.activity_comments.get("1.0", tk.END).strip()
+        # wrap comments
+        comments = textwrap.fill(comments, width=50)
 
         # list of tuples to hold corresponding field names
         fields = [
@@ -199,6 +203,27 @@ class Activity:
         if not rating.isdigit() or int(rating) <= 0 or int(rating) > 5:
             messagebox.showerror("Invalid Input", "Rating must be a number between 1 and 5")
             return
+        
+        # preview entry
+        activity_details = f"""
+Category: {category}
+
+Habit: {habit}
+
+Activity Date: {activity_date}
+
+Activity: {activity}
+
+Rating: {rating}
+
+Comments: {comments if comments else None}
+"""
+        # confirm entry dialog
+        if messagebox.askokcancel("Confirm Activity Log", activity_details):
+            db.safe_db_call(db.insert_activity, habit_id,activity_date,activity,rating,comments)
+
+            self.window.destroy()
+            self.main_window.deiconify()
 
 # run the main application loop
 if __name__ == "__main__":
