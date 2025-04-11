@@ -14,9 +14,9 @@ def insert_habit(name, start_date, frequency, tracking,goal, goal_units, categor
 
     # insert values
     cursor.execute("""
-            INSERT INTO habits(name, start_date, frequency, tracking_type, category, notes, end_date)
-            VALUES (?,?,?,?,?,?,?)
-    """, (name, start_date, frequency, tracking,goal, goal_units, category, notes, end_date))
+            INSERT INTO habits(name, start_date, frequency,category,tracking_type,goal, goal_units, notes, end_date)
+            VALUES (?,?,?,?,?,?,?,?,?)
+    """, (name, start_date, frequency,category, tracking,goal, goal_units, notes, end_date))
 
     # commit changes
     conn.commit()
@@ -96,14 +96,16 @@ def safe_db_call(db_function, *args, success_message="Operation Successful"):
     try:
         db_function(*args)
         messagebox.showinfo("Success", success_message)
+        return True
     except sqlite3.IntegrityError as e:
         messagebox.showerror("Integrity Error", f"Data constraint violated: {e}")
     except sqlite3.OperationalError as e:
         messagebox.showerror("Operational Error", f"Database error: {e}")
     except sqlite3.ProgrammingError as e:
-        messagebox.showerror("Programming Error", f"Code isse: {e}")
+        messagebox.showerror("Programming Error", f"Code issue: {e}")
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"An unexpected error occurred: {e}")
+    return False
 
 
     
