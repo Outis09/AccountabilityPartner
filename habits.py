@@ -13,9 +13,10 @@ import json
 import os
 import textwrap
 from db import db_operations
+import helper as hp
 
 class Habits:
-    def __init__(self, window, main_window):
+    def __init__(self,window,  main_window):
         self.window = window
         self.main_window = main_window
 
@@ -26,39 +27,12 @@ class Habits:
         # handle window close event
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Create container frame
-        container = tk.Frame(self.window)
-        container.pack(fill="both", expand=True)
-        
-        # Create canvas with scrollbar
-        self.canvas = tk.Canvas(container)
-        self.scrollbar = tk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
-        
-        # Configure canvas
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        
-        # Pack scrollbar first
-        self.scrollbar.pack(side="right", fill="y")
-        # pack canvas
-        self.canvas.pack(side="left", fill="both", expand=True)
-        
-        # Create main frame inside canvas
-        self.main_frame = tk.Frame(self.canvas)
-        
-        # Add main frame to canvas
-        self.inner_window = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
-        
-        # Force a minimum width on the main_frame
-        self.main_frame.configure(width=400)  # Set minimum width
-        
-        # Update scrollregion when frame changes
-        self.main_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        
-        # Make inner window adjust to canvas width
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.inner_window, width=e.width))
+        # create scrollable frame
+        self.scrollable = hp.ScrollableFrame(self.window)
+        self.scrollable.pack(fill="both", expand=True)
 
-        # bind mouse wheel to scroll the canvas with mouse/touchpad
-        self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
+        # get frame
+        self.main_frame = self.scrollable.get_frame()
 
         # enter habit name button
         habit_prompt = tk.Label(self.main_frame, text="Enter Habit Name (eg. Read for 30 mins each day):")
@@ -283,7 +257,7 @@ class Habits:
             if tracking == "Count (Number-based)":
                 goal_units = "times"
             elif tracking == "Duration (Minutes/hours)":
-                goal_units == "minutes"            
+                goal_units = "minutes"            
         else:
             goal = None
             goal_units = None
@@ -309,22 +283,23 @@ class Habits:
             return
         
         # validate goal
-        if not goal.isdigit():
-            messagebox.showerror("Error", "Enter a valid goal")
-            return
-        elif float(goal) <= 0:
-            messagebox.showerror("Error","Goal cannot be zero or negative")
-            return
-        elif tracking == "Count (Number-based)" and float(goal) > 10 and self.warning_confirm == False:
-            warning = messagebox.askyesno("High Value Warning","The value you entered is unusually high. Are you sure you want to continue?")
-            if warning:
-                self.warning_confirm = True
-            return
-        elif tracking == "Duration (Minutes/hours)" and float(goal) > 300 and self.warning_confirm == False:
-            warning = messagebox.askyesno("High Value Warning","The value you entered is unusually high. Are you sure you want to continue?")
-            if warning:
-                self.warning_confirm = True
-            return
+        if goal:
+            if not goal.isdigit():
+                messagebox.showerror("Error", "Enter a valid goal")
+                return
+            elif float(goal) <= 0:
+                messagebox.showerror("Error","Goal cannot be zero or negative")
+                return
+            elif tracking == "Count (Number-based)" and float(goal) > 10 and self.warning_confirm == False:
+                warning = messagebox.askyesno("High Value Warning","The value you entered is unusually high. Are you sure you want to continue?")
+                if warning:
+                    self.warning_confirm = True
+                return
+            elif tracking == "Duration (Minutes/hours)" and float(goal) > 300 and self.warning_confirm == False:
+                warning = messagebox.askyesno("High Value Warning","The goal value you entered is unusually high. Are you sure you want to continue?")
+                if warning:
+                    self.warning_confirm = True
+                return
             
         
         # preview habit details
@@ -337,7 +312,7 @@ Frequency: {frequency}
 
 Tracking Type: {tracking}
 
-Goal: {goal}
+Goal: {goal} {goal_units} {frequency.lower()}
 
 Category: {category}
 
@@ -352,11 +327,10 @@ End Date: {end_date if end_date else "Indefinitely"}
             if self.custom_entry.get():
                 self.save_custom_category(self.custom_entry.get())
             # save habit to database
-            db_operations.insert_habit(habit, start_date, frequency,tracking,goal, goal_units, category, notes, end_date)
-
-            messagebox.showinfo("Success", "Habit saved successfully!")
-            self.window.destroy()
-            self.main_window.deiconify()
+            success = db_operations.safe_db_call(db_operations.insert_habit,habit, start_date, frequency,tracking,goal, goal_units, category, notes, end_date, success_message="Habit saved successfully!")
+            if success:
+                self.window.destroy()
+                self.main_window.deiconify()
 
     def tracking_display(self):
         self.goal_frame.pack(before=self.category_frame)
