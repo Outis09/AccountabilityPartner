@@ -63,7 +63,7 @@ def get_habits(category):
     cursor = conn.cursor()
     # query to get categories
     cursor.execute("""
-            SELECT name, frequency 
+            SELECT name, tracking_type
             FROM habits 
             WHERE category = (?) AND (end_date IS NULL OR end_date > current_timestamp)
     """, (category,))
@@ -88,9 +88,9 @@ def get_habit_id(habit):
         FROM habits
         WHERE name = (?)
         """, (habit,))
-    id = [row[0] for row in cursor.fetchall()]
+    id = cursor.fetchone()
     conn.close()
-    return id
+    return id[0]
 
 def safe_db_call(db_function, *args, success_message="Operation Successful"):
     try:
