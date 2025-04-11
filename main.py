@@ -17,6 +17,7 @@ from pathlib import Path  # For managing file paths
 
 from habits import Habits  # Importing the Habits class from the habits module
 from db import init_db
+from activity_logs import Activity
 
 class AccountabilityPartner:
     """
@@ -98,7 +99,7 @@ class AccountabilityPartner:
         add_habit_btn.pack() #display the button in the main frame
 
         # Record today's activity button
-        record_activity_btn = tk.Button(main_frame, text = "Log Activity", width=25)
+        record_activity_btn = tk.Button(main_frame, text = "Log Activity", width=25, command=self.open_activity_logs)
         record_activity_btn.pack() #display the button in the main frame
 
         # Analyze progress button
@@ -118,6 +119,17 @@ class AccountabilityPartner:
         self.root.withdraw()
         habits_window = tk.Toplevel(root)  # create a new top-level window
         Habits(habits_window, self.root)  # pass the new window and main window to the Habits class
+
+    # open activity logs window
+    def open_activity_logs(self):
+        """
+        Open the Activity Logs window
+        """
+        # hide the main window
+        self.root.withdraw()
+        activity_logs = tk.Toplevel(root)
+        Activity(activity_logs, self.root)
+
 
 # run the main application loop
 if __name__ == "__main__":
