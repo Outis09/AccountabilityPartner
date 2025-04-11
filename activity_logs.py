@@ -120,21 +120,21 @@ class Activity:
         self.tracking_type = self.habit_details.get(selected_habit)
         if selected_habit:
             self.activity_frame.pack(before=self.rating_frame)
-            if self.tracking_type == "Daily":
+            if self.tracking_type == "Yes/No (Completed or not)":
                 self.yes_no_prompts.pack()
                 self.yes_radio.pack()
                 self.no_radio.pack()
                 self.count_prompt.pack_forget()
                 self.duration_prompts.pack_forget()
                 self.other_tracking_entry.pack_forget()
-            elif self.tracking_type == "Weekly":
+            elif self.tracking_type == "Count (Number-based)":
                 self.count_prompt.pack()
                 self.other_tracking_entry.pack()
                 self.yes_radio.pack_forget()
                 self.no_radio.pack_forget()
                 self.yes_no_prompts.pack_forget()
                 self.duration_prompts.pack_forget()
-            elif self.tracking_type == "Monthly":
+            elif self.tracking_type == "Duration (Minutes/hours)":
                 self.duration_prompts.pack()
                 self.other_tracking_entry.pack()
                 self.yes_radio.pack_forget()
@@ -158,7 +158,7 @@ class Activity:
         habit = self.selected_habit.get()
         habit_id = db.get_habit_id(habit)
         activity_date = self.calendar.get_date()
-        if self.tracking_type == "Daily":
+        if self.tracking_type == "Yes/No (Completed or not)":
             activity = self.activity.get()
         else:
             activity = self.other_tracking_entry.get()
@@ -182,18 +182,18 @@ class Activity:
             messagebox.showerror("Error", f"{', '.join(missing)} cannot be blank.")
             return
         
-        if self.tracking_type != "Daily" and not activity.isdigit():
+        if self.tracking_type != "Yes/No (Completed or not)" and not activity.isdigit():
             messagebox.showerror("Error", "Please enter a valid value for tracking input")
             return
-        elif self.tracking_type != "Daily" and int(activity) <= 0:
+        elif self.tracking_type != "Yes/No (Completed or not)" and int(activity) <= 0:
             messagebox.showerror("Error", "Tracking input cannot be zero or negative")
             return
-        elif self.tracking_type == "Weekly" and int(activity) >= 300 and self.confirmed_save == False:
+        elif self.tracking_type == "Duration (Minutes/hours)" and int(activity) >= 300 and self.confirmed_save == False:
             warning = messagebox.askyesno("High Value Input", "The minutes you entered is unusually large. Are you sure you want to continue?")
             if warning:
                 self.confirmed_save = True
             return
-        elif self.tracking_type == "Monthly" and int(activity) > 10 and self.confirmed_save == False:
+        elif self.tracking_type == "Count (Number-based)" and int(activity) > 10 and self.confirmed_save == False:
             warning = messagebox.askyesno("High Value Input", "The number of times you performed this activity is unusually high. Are you sure you want to continue?")
             if warning:
                 self.confirmed_save = True
@@ -220,7 +220,7 @@ Comments: {comments if comments else None}
 """
         # confirm entry dialog
         if messagebox.askokcancel("Confirm Activity Log", activity_details):
-            db.safe_db_call(db.insert_activity, habit_id,activity_date,activity,rating,comments)
+            db.safe_db_call(db.insert_activity, habit_id,activity_date,activity,rating,comments, success_message="Activity successfully logged :)")
 
             self.window.destroy()
             self.main_window.deiconify()
