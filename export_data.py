@@ -19,6 +19,32 @@ class DataExporter:
         # get frame
         self.main_frame = self.scroll.get_frame()
 
+        # create widgets
+        self.create_widgets()
+
+
+
+    
+    def create_widgets(self):
+        self.download_options = ['Export all habit data', 'Export all activity logs', 'Export filtered data']
+        self.download_option = tk.StringVar()
+        for option in self.download_options:
+            ttk.Radiobutton(self.main_frame,
+                            text=option,
+                            variable=self.download_option,
+                            value=option).pack()
+    
+        # create frame to hold widgets
+        self.final_widgets_frame = tk.Frame(self.main_frame)
+        self.final_widgets_frame.pack()
+        # create export data button widget
+        tk.Button(self.final_widgets_frame, text="Export Data").pack()
+        # create back to main window widget
+        tk.Button(self.final_widgets_frame, text="Back to Main Window").pack()
+
+        
+
+
 # run the window
 if __name__ == "__main__":
     root = tk.Tk()
