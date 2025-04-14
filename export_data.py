@@ -38,7 +38,7 @@ class DataExporter:
         # general filter label
         self.general_filter = tk.Label(self.filter_frame, text="Filter by:")
         # filter by category
-        self.cat_filter_prompt = tk.Label(self.filter_frame, text="Category")
+        self.cat_filter_prompt = tk.Label(self.filter_frame, text="Category:")
         # categories
         self.categories = db.get_categories()
         self.category = tk.StringVar()
@@ -46,10 +46,16 @@ class DataExporter:
         self.cat_dropdown['values'] = self.categories
         self.cat_dropdown.bind("<<ComboboxSelected>>", self.update_habits)
         # filter by habit
-        self.habit_filter_prompt = tk.Label(self.filter_frame, text="Habit")
+        self.habit_filter_prompt = tk.Label(self.filter_frame, text="Habit:")
         # habits
         self.habit = tk.StringVar()
         self.habit_dropdown = ttk.Combobox(self.filter_frame, textvariable=self.habit)
+
+        # tracking type
+        self.tracking_prompt = tk.Label(self.filter_frame, text="Tracking Type:") 
+
+        # frequency
+        self.frequency_prompt = tk.Label(self.filter_frame, text="Frequency:")
         
 
         
@@ -70,6 +76,8 @@ class DataExporter:
             self.cat_dropdown.grid(row=1, column=1)
             self.habit_filter_prompt.grid(row=1, column=2)
             self.habit_dropdown.grid(row=1, column=3)
+            self.tracking_prompt.grid(row=2, column=0)
+            self.frequency_prompt.grid(row=2, column=2)
         else:
             self.filter_frame.pack_forget()
 
@@ -83,8 +91,6 @@ class DataExporter:
         else:
             prompt = ["Select a category to proceed"]
             self.habit_dropdown['values'] = prompt
-
-        
 
 
 # run the window
