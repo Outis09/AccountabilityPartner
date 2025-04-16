@@ -1,6 +1,7 @@
 # import sqlite for db executions
 import sqlite3
 from tkinter import messagebox
+import pandas as pd
 
 # db name
 db = 'accountability.db'
@@ -106,6 +107,27 @@ def safe_db_call(db_function, *args, success_message="Operation Successful"):
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"An unexpected error occurred: {e}")
     return False
+
+def get_all_habits_to_df():
+    """Get all data for habits"""
+        # connect to db
+    conn = sqlite3.connect(db)
+    # create cursor for executing categories
+    cursor = conn.cursor()
+    # query to get all habits data
+    cursor.execute("""
+    SELECT name, start_date, frequency, category, tracking_type,goal, goal_units,notes, end_date
+    FROM habits
+    """)
+    # get rows
+    rows = cursor.fetchall()
+    # get column names
+    columns = [description[0] for description in cursor.description]
+    # convert to dataframe
+    habits_df = pd.DataFrame(rows, columns=columns)
+    # close connection
+    conn.close()
+    return habits_df
 
 
     
