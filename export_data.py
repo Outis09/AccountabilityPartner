@@ -1,6 +1,6 @@
 # import modules
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import helper as hp
 from db import db_operations as db
 
@@ -63,7 +63,7 @@ class DataExporter:
         self.final_widgets_frame = tk.Frame(self.main_frame)
         self.final_widgets_frame.pack()
         # create export data button widget
-        tk.Button(self.final_widgets_frame, text="Export Data").pack()
+        tk.Button(self.final_widgets_frame, text="Export Data", command=self.save_data).pack()
         # create back to main window widget
         tk.Button(self.final_widgets_frame, text="Back to Main Window").pack()
 
@@ -91,6 +91,33 @@ class DataExporter:
         else:
             prompt = ["Select a category to proceed"]
             self.habit_dropdown['values'] = prompt
+
+    def save_data(self):
+        option = self.download_option.get()
+        if option == "Export all habit data":
+            df = db.get_all_habits_to_df()
+        elif option == "Export all activity logs":
+            df = db.get_all_activity_logs()
+        elif not option:
+            messagebox.showinfo("Data Information", "No option selected!")
+            return
+        
+        # file path from user
+        file_path = filedialog.asksaveasfilename(
+            defaultextension='.xlsx',
+            filetypes=[("Excel Files", "*.xlsx")],
+            title="Save Excel File As"
+        )
+
+        if file_path:
+            try:
+                df.to_excel(file_path, index=False)
+                messagebox.showinfo("Success", f"Data saved to: \n{file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to saved file:\n{e}")
+        else:
+            messagebox.showinfo("Cancelled", "Save operation was cancelled.")
+            return
 
 
 # run the window
