@@ -129,6 +129,28 @@ def get_all_habits_to_df():
     conn.close()
     return habits_df
 
+def get_all_activity_logs():
+    """Get all activity logs data"""
+            # connect to db
+    conn = sqlite3.connect(db)
+    # create cursor for executing categories
+    cursor = conn.cursor()
+    # query to get all habits data
+    cursor.execute("""
+    SELECT h.name, a.log_date, a.activity, a.rating, a.log_notes
+    FROM activity_logs a
+    JOIN habits h on a.habit_id = h.habit_id
+    """)
+    # get rows
+    rows = cursor.fetchall()
+    # get column names
+    columns = [description[0] for description in cursor.description]
+    # convert to dataframe
+    habits_df = pd.DataFrame(rows, columns=columns)
+    # close connection
+    conn.close()
+    return habits_df
+
 
     
 
