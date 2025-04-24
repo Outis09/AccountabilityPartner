@@ -14,10 +14,12 @@ import pandas as pd  # For handling data manipulation and export
 from datetime import datetime  # For timestamping exported files
 import os  # For interacting with the operating system
 from pathlib import Path  # For managing file paths
+import subprocess
 
 from habits import Habits  # Importing the Habits class from the habits module
 from db import init_db
 from activity_logs import Activity
+from export_data import DataExporter
 
 class AccountabilityPartner:
     """
@@ -107,7 +109,7 @@ class AccountabilityPartner:
         analyze_progress_btn.pack()
 
         # Export data button
-        export_data_btn = tk.Button(main_frame, text = "Download Report", width=25)
+        export_data_btn = tk.Button(main_frame, text = "Download Report", width=25, command=self.open_data_exporter)
         export_data_btn.pack() #display the button in the main frame
 
     # function to open habits window
@@ -129,6 +131,14 @@ class AccountabilityPartner:
         self.root.withdraw()
         activity_logs = tk.Toplevel(root)
         Activity(activity_logs, self.root)
+
+    def open_data_exporter(self):
+        """Function to open window for data exports"""
+        self.root.withdraw()
+        exports = tk.Toplevel(root)
+        DataExporter(exports, self.root)
+
+    
 
 
 # run the main application loop
