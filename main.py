@@ -105,7 +105,7 @@ class AccountabilityPartner:
         record_activity_btn.pack() #display the button in the main frame
 
         # Analyze progress button
-        analyze_progress_btn = tk.Button(main_frame, text = "View Progress", width=25)
+        analyze_progress_btn = tk.Button(main_frame, text = "View Progress", width=25, command=self.open_streamlit)
         analyze_progress_btn.pack()
 
         # Export data button
@@ -138,7 +138,9 @@ class AccountabilityPartner:
         exports = tk.Toplevel(root)
         DataExporter(exports, self.root)
 
-    
+    def open_streamlit(self):
+        """Opens Streamlit in browser for data visualization"""
+        subprocess.Popen(['streamlit', 'run', 'analytics.py'])
 
 
 # run the main application loop
