@@ -24,7 +24,7 @@ class DataExporter:
         self.create_widgets()
     
     def create_widgets(self):
-        self.download_options = ['Export all habit data', 'Export all activity logs', 'Export filtered data']
+        self.download_options = ['Export all habit data', 'Export all activity logs'] #, 'Export filtered data']
         self.download_option = tk.StringVar()
         for option in self.download_options:
             ttk.Radiobutton(self.main_frame,
@@ -65,7 +65,7 @@ class DataExporter:
         # create export data button widget
         tk.Button(self.final_widgets_frame, text="Export Data", command=self.save_data).pack()
         # create back to main window widget
-        tk.Button(self.final_widgets_frame, text="Back to Main Window").pack()
+        tk.Button(self.final_widgets_frame, text="Back to Main Window", command=self.back_to_main_window).pack()
 
     def display_filters(self):
         selected = self.download_option.get()
@@ -91,6 +91,11 @@ class DataExporter:
         else:
             prompt = ["Select a category to proceed"]
             self.habit_dropdown['values'] = prompt
+
+    def back_to_main_window(self):
+        """Close current window and show main window"""
+        self.window.destroy()
+        self.main_window.deiconify()
 
     def save_data(self):
         option = self.download_option.get()
@@ -118,6 +123,8 @@ class DataExporter:
         else:
             messagebox.showinfo("Cancelled", "Save operation was cancelled.")
             return
+        # destroy current window
+        self.back_to_main_window()
 
 
 # run the window
