@@ -17,15 +17,20 @@ st.set_page_config(
 )
 
 # page title
-st.title("📊Activity Logs Visualization")
+st.title("Accountability Partner")
+st.subheader("Your Habit Dashboard")
 
 # extract habit data into df
 habit_df = db.get_all_habits_to_df()
 # extract activity logs into df
 activity_df = db.get_all_activity_logs()
+# merge dataframes
+merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
+merged_df.drop(columns='name_y', inplace=True)
+merged_df.rename(columns={'name_x':'name'}, inplace=True)
 # sidebar for filters
 with st.sidebar: 
-    st.header("Accountability Partner")
+    st.header("Filters")
 
     # date filters
     start_date = st.date_input("Start date", activity_df['log_date'].min())
@@ -36,11 +41,11 @@ with st.sidebar:
     categories_with_all = ['All categories'] + sorted(categories)
     selected_category = st.selectbox("Select category",options=categories_with_all)
     if selected_category == 'All categories':
-        filtered_df = activity_df.copy()
+        filtered_df = merged_df.copy()
         filtered_habits = habit_df.copy()
     else:
         filtered_habits = habit_df[habit_df["category"] == selected_category]
-        filtered_df = activity_df[activity_df['habit_id'].isin(filtered_habits['habit_id'])]
+        filtered_df = merged_df[merged_df['habit_id'].isin(filtered_habits['habit_id'])]
 
     # if selected_category:
     #     filtered_habits = habit_df[habit_df["category"] == selected_category]
@@ -51,7 +56,7 @@ with st.sidebar:
 # convert column to date
 filtered_df['log_date'] = pd.to_datetime(filtered_df['log_date'])
 
-tab1, tab2 = st.tabs(['📈 Charts',  "🗃️ Data" ])        
+tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])        
 with tab1:
     st.header("📈 Visualize your progress")
 
@@ -75,7 +80,7 @@ with tab1:
         st.pyplot(fig)
         # st.checkbox("Show values on chart", value=True)
 
-
+        # wordcloud visual
         st.subheader("Highlights from your activity logs")
         notes = filtered_df['log_notes'].dropna().to_list()
         text = " ".join(notes)
@@ -89,6 +94,7 @@ with tab1:
             st.pyplot(fig)
 
     with col2:
+        # completion rate visual
         st.subheader("Completion Rate")
         today = pd.to_datetime(datetime.now().date())
         consistency_list = []
@@ -97,29 +103,59 @@ with tab1:
             name = row['name']
             frequency = row['frequency']
             start_date = pd.to_datetime(row['start_date'])
-
             # actual logs
             actual_logs = filtered_df[filtered_df['habit_id'] == habit_id].shape[0]
-
-            # expected logs
+            # calculate expected logs based on habit frequency
             if frequency == "Daily":
+                # if frequency is daily, expected logs is days between start date and today
                 expected_logs = max((today-start_date).days + 1, 1)
             elif frequency == "Weekly":
+                # if frequency is weekly, expected logs is weeks between start date and today
                 expected_logs = max(((today - start_date).days // 7)+1, 1)
             elif frequency == "Monthly":
+                # if frequency is monthly, expected logs is months between start date and today
                 expected_logs = max(((today.year - start_date.year) * 12 + (today.month - start_date.month)) + 1, 1)
-
+            # calculate completion rate
             consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
             consistency_list.append({
                 "Habit": name,
                 "Expected Logs": expected_logs,
                 "Actual Logs":actual_logs,
-                "Completion Rate(%)": consistency_rate
+                "Completion Rate(%)": float(consistency_rate)
             })
-
+        # convert completion rate list to dataframe
         consistency_df = pd.DataFrame(consistency_list)
-
+        # dispay dataframe as table
         st.dataframe(consistency_df)
+
+        # goal achievement visual
+        st.subheader("Goal Achievement")
+        # filter for only tracking types that allow for goal tracking
+        goal_df = filtered_df[filtered_df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
+        if goal_df.shape[0] == 0:
+            st.write("This category does not have habits to be displayed for this visual")
+        else:
+            # calculate achievement per activity log
+            goal_df['goal_achievement'] = ((goal_df['activity'].astype(float) / goal_df['goal'].astype('float')) * 100).clip(upper=100)
+            # group by habit
+            habit_achievement = (goal_df.groupby('habit_id').agg(
+                average_goal_achievement = ("goal_achievement", "mean"),
+                total_logs = ("log_id", 'count'),
+                habit_name = ("name", 'first')
+            ).reset_index().sort_values(by='average_goal_achievement', ascending=True))
+            # plot visual
+            fig,ax = plt.subplots(figsize=(6,4))
+            sns.barplot(y='habit_name',
+                        x='average_goal_achievement',
+                        data = habit_achievement,
+                        orient='h',
+                        ax=ax)
+            ax.set_xlabel('Average Goal Achievement (%)')
+            ax.set_ylabel("Habit")
+            ax.invert_yaxis()
+            plt.tight_layout()
+            st.pyplot(fig)
+
 
 
     # log calendar visual
@@ -130,8 +166,9 @@ with tab1:
     st.pyplot(fig, use_container_width=True)
 
 
-with tab2:
+with tab3:
     st.header("Your activity logs data")
+    tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
     st.write(f"Showing {len(filtered_df)} records based on your filter selections.")
     st.dataframe(filtered_df)
     st.dataframe(habit_df)
