@@ -20,14 +20,35 @@ st.set_page_config(
 st.title("Accountability Partner")
 st.subheader("Your Habit Dashboard")
 
-# extract habit data into df
-habit_df = db.get_all_habits_to_df()
-# extract activity logs into df
-activity_df = db.get_all_activity_logs()
-# merge dataframes
-merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
-merged_df.drop(columns='name_y', inplace=True)
-merged_df.rename(columns={'name_x':'name'}, inplace=True)
+# load and cache data
+@st.cache_data
+def load_data():
+    """Load habits and activity logs dataframe"""
+    habit_df = db.get_all_habits_to_df()
+    activity_df = db.get_all_activity_logs()
+    merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
+    merged_df.drop(columns='name_y', inplace=True)
+    merged_df.rename(columns={'name_x':'name'}, inplace=True)
+    return habit_df, activity_df,merged_df
+
+habit_df,activity_df, merged_df = load_data()
+# # extract habit data into df
+# habit_df = db.get_all_habits_to_df()
+# # extract activity logs into df
+# activity_df = db.get_all_activity_logs()
+# # merge dataframes
+# merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
+# merged_df.drop(columns='name_y', inplace=True)
+# merged_df.rename(columns={'name_x':'name'}, inplace=True)
+
+# use session_state for the creation of context-dependent filters
+if 'active_tab' not in st.session_state:
+    st.session_state.active_tab = "📊 Overview"
+
+# create tabs
+tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
+
+
 # sidebar for filters
 with st.sidebar: 
     st.header("Filters")
@@ -47,6 +68,8 @@ with st.sidebar:
         filtered_habits = habit_df[habit_df["category"] == selected_category]
         filtered_df = merged_df[merged_df['habit_id'].isin(filtered_habits['habit_id'])]
 
+    # specific filters for habit analytics tab
+    tab_specific_container = st.container()
     # if selected_category:
     #     filtered_habits = habit_df[habit_df["category"] == selected_category]
     #     filtered_df = activity_df[activity_df['habit_id'].isin(filtered_habits['habit_id'])]
@@ -56,7 +79,7 @@ with st.sidebar:
 # convert column to date
 filtered_df['log_date'] = pd.to_datetime(filtered_df['log_date'])
 
-tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])        
+        
 with tab1:
     st.header("📈 Visualize your progress")
 
@@ -165,6 +188,8 @@ with tab1:
     fig, ax = calplot.calplot(cal_data, cmap="YlGn", figsize=(8,3))
     st.pyplot(fig, use_container_width=True)
 
+# with tab2:
+#     if tab2._is_active
 
 with tab3:
     st.header("Your activity logs data")
