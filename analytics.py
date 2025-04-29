@@ -32,55 +32,78 @@ def load_data():
     return habit_df, activity_df,merged_df
 
 habit_df,activity_df, merged_df = load_data()
-# # extract habit data into df
-# habit_df = db.get_all_habits_to_df()
-# # extract activity logs into df
-# activity_df = db.get_all_activity_logs()
-# # merge dataframes
-# merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
-# merged_df.drop(columns='name_y', inplace=True)
-# merged_df.rename(columns={'name_x':'name'}, inplace=True)
+merged_df['log_date'] = pd.to_datetime(merged_df['log_date'])
 
-# use session_state for the creation of context-dependent filters
-if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = "📊 Overview"
+def update_active_view():
+    st.session_state.active_view = st.session_state.view_radio
 
-# create tabs
-tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
+# initialize session state
+if 'active_view' not in st.session_state:
+    st.session_state.active_view = "📊 Overview"
+if 'view_radio' not in st.session_state:
+    st.session_state.view_radio = "📊 Overview"
+
+# container for the main view selector
+view_container = st.container()
 
 
 # sidebar for filters
-with st.sidebar: 
+with st.sidebar:
     st.header("Filters")
 
-    # date filters
-    start_date = st.date_input("Start date", activity_df['log_date'].min())
-    end_date = st.date_input("End date", activity_df['log_date'].max())
+    if st.session_state.active_view == "📊 Overview":
+        # date filters for overview page
+        start_date = st.date_input("Start date", merged_df['log_date'].min().date())
+        end_date = st.date_input("End date", merged_df['log_date'].max().date())
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+        overview_df01 = merged_df[(merged_df['log_date'] >= start_date) & (merged_df['log_date'] <= end_date)]
 
-    # category filters
-    categories = habit_df['category'].unique()
-    categories_with_all = ['All categories'] + sorted(categories)
-    selected_category = st.selectbox("Select category",options=categories_with_all)
-    if selected_category == 'All categories':
-        filtered_df = merged_df.copy()
-        filtered_habits = habit_df.copy()
-    else:
-        filtered_habits = habit_df[habit_df["category"] == selected_category]
-        filtered_df = merged_df[merged_df['habit_id'].isin(filtered_habits['habit_id'])]
+        # category filters
+        categories = overview_df01['category'].unique()
+        categories_with_all = ['All categories'] + sorted(categories)
+        selected_category = st.selectbox("Select category", options=categories_with_all)
 
-    # specific filters for habit analytics tab
-    tab_specific_container = st.container()
-    # if selected_category:
-    #     filtered_habits = habit_df[habit_df["category"] == selected_category]
-    #     filtered_df = activity_df[activity_df['habit_id'].isin(filtered_habits['habit_id'])]
-    #     habits = st.multiselect("Select Habits",
-    #                             options=filtered_habits['name'])
+        if selected_category == 'All categories':
+            overview_df = overview_df01.copy()
+        else:
+            overview_df = merged_df[merged_df['category'] == selected_category]
 
-# convert column to date
-filtered_df['log_date'] = pd.to_datetime(filtered_df['log_date'])
+    elif st.session_state.active_view == '📈 Activity Analytics':
+        # category filters
+        analytics_categories = merged_df['category'].unique()
+        analytics_selected_category = st.selectbox('Select category', options=analytics_categories)
 
-        
-with tab1:
+        analytics_df01 = merged_df[merged_df['category'] == analytics_selected_category]
+
+        # habit filters
+        analytics_habits = analytics_df01['name'].unique()
+        analytics_selected_habit = st.selectbox("Select habit", options=analytics_habits)
+        analytics_df = analytics_df01[analytics_df01['name'] == analytics_selected_habit]
+    elif st.session_state.active_view == '🗃️ Data':
+        st.write("testing")
+
+# create radio in container
+with view_container:
+    selected_view = st.radio(
+        "Select View",
+        ["📊 Overview", "📈 Activity Analytics", "🗃️ Data"],
+        horizontal=True,
+        key="view_radio",
+        on_change=update_active_view
+    )
+
+    # update session state based on selection
+    if selected_view == "📊 Overview":
+        st.session_state.active_view = "📊 Overview"
+    elif selected_view == "📈 Activity Analytics":
+        st.session_state.active_view = "📈 Activity Analytics"
+    elif selected_view == "🗃️ Data":
+        st.session_state.active_view = "🗃️ Data"
+
+
+# display selected view content
+if st.session_state.active_view == "📊 Overview":
     st.header("📈 Visualize your progress")
 
     # create 2 columns for charts
@@ -88,7 +111,7 @@ with tab1:
 
     with col1:
         # average rating per habit visual
-        habit_averages = filtered_df.groupby('name')['rating'].mean().reset_index().sort_values(by='rating',ascending=True)
+        habit_averages = overview_df.groupby('name')['rating'].mean().reset_index().sort_values(by='rating',ascending=True)
         st.subheader("Average rating by activity")
         fig,ax = plt.subplots(figsize=(6,4))
         sns.barplot(y='name',
@@ -105,7 +128,7 @@ with tab1:
 
         # wordcloud visual
         st.subheader("Highlights from your activity logs")
-        notes = filtered_df['log_notes'].dropna().to_list()
+        notes = overview_df['log_notes'].dropna().to_list()
         text = " ".join(notes)
         if text.strip() == "":
             st.info("Wordcloud not available because there are not enough notes from your logs to build the visual")
@@ -121,13 +144,14 @@ with tab1:
         st.subheader("Completion Rate")
         today = pd.to_datetime(datetime.now().date())
         consistency_list = []
-        for index,row in filtered_habits.iterrows():
+        unique_habits = overview_df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
+        for index,row in unique_habits.iterrows():
             habit_id = row['habit_id']
             name = row['name']
             frequency = row['frequency']
             start_date = pd.to_datetime(row['start_date'])
             # actual logs
-            actual_logs = filtered_df[filtered_df['habit_id'] == habit_id].shape[0]
+            actual_logs = overview_df[overview_df['habit_id'] == habit_id].shape[0]
             # calculate expected logs based on habit frequency
             if frequency == "Daily":
                 # if frequency is daily, expected logs is days between start date and today
@@ -154,7 +178,7 @@ with tab1:
         # goal achievement visual
         st.subheader("Goal Achievement")
         # filter for only tracking types that allow for goal tracking
-        goal_df = filtered_df[filtered_df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
+        goal_df = overview_df[overview_df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
         if goal_df.shape[0] == 0:
             st.write("This category does not have habits to be displayed for this visual")
         else:
@@ -183,17 +207,14 @@ with tab1:
 
     # log calendar visual
     st.subheader("Log Calendar")
-    cal_data = (filtered_df.groupby('log_date').size())
+    cal_data = (overview_df.groupby('log_date').size())
     cal_data.index = pd.to_datetime(cal_data.index)
     fig, ax = calplot.calplot(cal_data, cmap="YlGn", figsize=(8,3))
     st.pyplot(fig, use_container_width=True)
-
-# with tab2:
-#     if tab2._is_active
-
-with tab3:
+elif st.session_state.active_view == "🗃️ Data":
+    df = merged_df.copy()
     st.header("Your activity logs data")
-    tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
-    st.write(f"Showing {len(filtered_df)} records based on your filter selections.")
-    st.dataframe(filtered_df)
-    st.dataframe(habit_df)
+    # tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
+    st.write(f"Showing {len(df)} records based on your filter selections.")
+    st.dataframe(df)
+    # st.dataframe(habit_df)
