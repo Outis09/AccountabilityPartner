@@ -7,7 +7,7 @@ import calplot
 from db import db_operations as db
 # wordcloud
 from wordcloud import WordCloud
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # set page config
 st.set_page_config(
@@ -46,6 +46,49 @@ if 'view_radio' not in st.session_state:
 # container for the main view selector
 view_container = st.container()
 
+# function to calculate streaks
+def calculate_streaks(dates, freq):
+    if len(dates) == 0:
+        return 0,0
+    dates = sorted(dates)
+    longest = current = 1
+    max_streak = 1
+
+    for i in range(1, len(dates)):
+        gap = (dates[i] - dates[i-1]).days
+        if (
+            (freq == 'Daily' and gap == 1) or
+            (freq == "Weekly" and gap <= 7) or
+            (freq == "Monthly" and (dates[i].month != dates[i-1].month and gap <= 31))
+        ):
+            current += 1
+            max_streak = max(max_streak, current)
+        else:
+            current = 1
+
+    today = pd.to_datetime("today").normalize()
+    days_since_last = (today - dates[-1]).days
+    is_still_active = (
+        (freq == "Daily" and days_since_last <= 1) or
+        (freq == "Weekly" and days_since_last <=7) or
+        (freq == "Monthly" and days_since_last <= 31)
+    )
+    current_streak = current if is_still_active else 0
+    return max_streak, current_streak
+
+def calculate_expected_logs(date, frequency):
+    today = pd.to_datetime("today").normalize()
+    date = pd.to_datetime(date)
+    # if frequency is daily, expected logs is days between start date and today
+    if frequency == "Daily":
+        expected_logs = max((today - date).days + 1, 1)
+    # if frequency is weekly, expected logs is weeks between start date and today
+    elif frequency == "Weekly":
+        expected_logs = max(((today - date).days // 7)+1,1)
+    # if frequency is monthly, expected logs is months between start date and today
+    elif frequency == "Monthly":
+        expected_logs = max(((today.year - date.year) * 12 + (today.month - date.month)) + 1, 1)
+    return expected_logs
 
 # sidebar for filters
 with st.sidebar:
@@ -90,7 +133,8 @@ with view_container:
         ["📊 Overview", "📈 Activity Analytics", "🗃️ Data"],
         horizontal=True,
         key="view_radio",
-        on_change=update_active_view
+        on_change=update_active_view,
+        label_visibility='collapsed'
     )
 
     # update session state based on selection
@@ -153,16 +197,7 @@ if st.session_state.active_view == "📊 Overview":
             # actual logs
             actual_logs = overview_df[overview_df['habit_id'] == habit_id].shape[0]
             # calculate expected logs based on habit frequency
-            if frequency == "Daily":
-                # if frequency is daily, expected logs is days between start date and today
-                expected_logs = max((today-start_date).days + 1, 1)
-            elif frequency == "Weekly":
-                # if frequency is weekly, expected logs is weeks between start date and today
-                expected_logs = max(((today - start_date).days // 7)+1, 1)
-            elif frequency == "Monthly":
-                # if frequency is monthly, expected logs is months between start date and today
-                expected_logs = max(((today.year - start_date.year) * 12 + (today.month - start_date.month)) + 1, 1)
-            # calculate completion rate
+            expected_logs = calculate_expected_logs(start_date, frequency)
             consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
             consistency_list.append({
                 "Habit": name,
@@ -211,6 +246,61 @@ if st.session_state.active_view == "📊 Overview":
     cal_data.index = pd.to_datetime(cal_data.index)
     fig, ax = calplot.calplot(cal_data, cmap="YlGn", figsize=(8,3))
     st.pyplot(fig, use_container_width=True)
+elif st.session_state.active_view == "📈 Activity Analytics":
+    st.header("Detailed Habit Analysis")
+    # create 2 columns for visuals
+    ana1, ana2 = st.columns(2)
+
+    with ana1:
+        # create summary table
+        st.subheader("Activity Summary")
+        habit = analytics_df.iloc[0]
+        name = habit['name']
+        goal = habit['goal']
+        goal_units = habit['goal_units']
+        frequency = habit['frequency']
+        tracking = habit['tracking_type']
+        start_date = habit['start_date']
+
+        # goal achievement
+        if tracking == "Yes/No (Completed or not)":
+            analytics_df['goal_achievement'] = np.nan
+        else:
+            analytics_df['goal_achievement'] = ((analytics_df['activity'].astype(float) / goal.astype(float)) * 100).clip(upper=100)
+        # average goal achievement
+        avg_goal = analytics_df['goal_achievement'].mean()
+        # average rating
+        avg_rating = analytics_df['rating'].mean()
+        # first and last logs
+        first_log = analytics_df['log_date'].min()
+        last_log = analytics_df['log_date'].max()
+        # total logs
+        total_logs = analytics_df.shape[0]
+        # expected logs
+        expected_logs = calculate_expected_logs(start_date, frequency)
+        # target
+        if pd.notna(goal) and goal not in [0, ""]:
+            target = f"{int(goal)}  {goal_units.lower()}  {frequency.lower()}"
+        else:
+            target = frequency
+        # streaks
+        dates = analytics_df['log_date'].to_list()
+        longest_streak, current_streak = calculate_streaks(dates, frequency)
+        summary_data = {
+            'Activity': name,
+            'Target': target,
+            'Expected Logs': expected_logs,
+            'Total Logs': total_logs,
+            'Average Rating': round(avg_rating, 2),
+            'First Log Date': first_log.date(),
+            'Last Log Date': last_log.date(),
+            'Longest Streak': longest_streak,
+            'Current Streak': current_streak
+        }
+        # convert to dataframe
+        summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
+        st.table(summary_df)
+
 elif st.session_state.active_view == "🗃️ Data":
     df = merged_df.copy()
     st.header("Your activity logs data")
@@ -218,3 +308,5 @@ elif st.session_state.active_view == "🗃️ Data":
     st.write(f"Showing {len(df)} records based on your filter selections.")
     st.dataframe(df)
     # st.dataframe(habit_df)
+
+
