@@ -96,13 +96,7 @@ def calculate_expected_logs(date, frequency):
     return expected_logs
 
 def plot_bar_chart(df, group_col, value_col, x_title, y_title):
-    """Calculates averages for a categorical column then plots bar chart with results"""
-    # averages = (df.groupby(group_col)[value_col]
-    #             .mean()
-    #             .round(2)
-    #             .reset_index()
-    #             .sort_values(by=value_col, ascending=True)
-    #             )
+    """Plots bar chart with altair"""
     chart = alt.Chart(df).mark_bar().encode(
         x=alt.X(f'{value_col}:Q', title=x_title),
         y=alt.Y(f'{group_col}:N', sort='-x', title=y_title),
@@ -114,6 +108,51 @@ def plot_bar_chart(df, group_col, value_col, x_title, y_title):
         height = 400
     )
     return chart
+
+def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value, target_label):
+    """Plots a line chart with altair"""
+    df[date_col] = pd.to_datetime(df[date_col])
+    df[value_col] = df[value_col].astype(float)
+
+    chart = alt.Chart(df).properties(
+        width = 700,
+        height = 400
+    )
+    
+    line = chart.mark_line(point=True).encode(
+        x=alt.X(f'{date_col}:T',title=x_title),
+        y=alt.Y(f'{value_col}:Q', title=y_title),
+        tooltip=[
+            alt.Tooltip(f'{date_col}:T', title=x_title),
+            alt.Tooltip(f'{value_col}:Q', title=y_title)
+        ]
+    )
+
+    # add target line if specified
+    if target_value is not None:
+        # yscale = alt.Scale(domain=[
+        #     min(df[value_col].min(), target_value),
+        #     max(df[value_col].max(), target_value)
+        # ])
+        rule = chart.mark_rule(color='red').encode(
+            alt.Y(f'max({target_value}):Q'))
+
+        # text = alt.Chart().mark_text(
+        #     text='Target',
+        #     align='right',
+        #     baseline='bottom',
+        #     dx=5,
+        #     dy=-5,
+        #     color='red'
+        # ).encode(
+        #    # y=alt.datum(target_value),
+        #     # x=alt.value(chart.width - 30 )
+        # )
+
+        chart = line + rule
+
+    return chart
+
 
 # sidebar for filters
 with st.sidebar:
@@ -312,13 +351,10 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         # line chart for activity logs against target
         st.subheader('Log vs Target')
         if tracking != "Yes/No (Completed or not)":
-            line_df = analytics_df[['log_date', 'activity', 'goal']]
-            line_df['log_date'] = line_df['log_date'].dt.normalize()
-            line_df['activity'] = line_df['activity'].astype(float)
-            line_df['goal'] = line_df['goal'].astype(float)
-            line_df = line_df.set_index('log_date')
-            st.line_chart(line_df, y_label=['Target', 'Actual'])
-            st.table(line_df)
+            goal = int(goal)
+            chart = plot_line_chart(analytics_df, 'log_date', 'activity', 'Log Date', goal_units,'goal','Target')
+            st.altair_chart(chart, use_container_width=True)
+
 
 elif st.session_state.active_view == "🗃️ Data":
     df = merged_df.copy()
