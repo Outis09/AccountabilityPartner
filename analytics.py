@@ -5,6 +5,7 @@ import numpy as np
 import seaborn as sns
 import calplot
 from db import db_operations as db
+import altair as alt
 # wordcloud
 from wordcloud import WordCloud
 from datetime import datetime, timedelta
@@ -15,9 +16,13 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
-
 # page title
-st.title("Accountability Partner")
+# st.title("Accountability Partner")
+logo_icon = "AppLogo.png"
+logo_image = "AppLogo.png"
+st.logo(image=logo_image, size='large')
+
+
 st.subheader("Your Habit Dashboard")
 
 # load and cache data
@@ -90,8 +95,29 @@ def calculate_expected_logs(date, frequency):
         expected_logs = max(((today.year - date.year) * 12 + (today.month - date.month)) + 1, 1)
     return expected_logs
 
+def plot_bar_chart(df, group_col, value_col, x_title, y_title):
+    """Calculates averages for a categorical column then plots bar chart with results"""
+    # averages = (df.groupby(group_col)[value_col]
+    #             .mean()
+    #             .round(2)
+    #             .reset_index()
+    #             .sort_values(by=value_col, ascending=True)
+    #             )
+    chart = alt.Chart(df).mark_bar().encode(
+        x=alt.X(f'{value_col}:Q', title=x_title),
+        y=alt.Y(f'{group_col}:N', sort='-x', title=y_title),
+        tooltip=[
+            alt.Tooltip(f'{group_col}:N',title=x_title),
+            alt.Tooltip(f'{value_col}:Q', title=y_title)]
+    ).properties(
+        width=600,
+        height = 400
+    )
+    return chart
+
 # sidebar for filters
 with st.sidebar:
+    st.title("Accountability Partner")
     st.header("Filters")
 
     if st.session_state.active_view == "📊 Overview":
@@ -155,19 +181,10 @@ if st.session_state.active_view == "📊 Overview":
 
     with col1:
         # average rating per habit visual
-        habit_averages = overview_df.groupby('name')['rating'].mean().reset_index().sort_values(by='rating',ascending=True)
+        habit_averages = overview_df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
         st.subheader("Average rating by activity")
-        fig,ax = plt.subplots(figsize=(6,4))
-        sns.barplot(y='name',
-                     x='rating', 
-                     data=habit_averages,
-                       orient='h',
-                         ax=ax)
-        ax.invert_yaxis()
-        ax.set_ylabel('Habit', fontsize=12)
-        ax.set_xlabel('Average Rating', fontsize=12)
-        plt.tight_layout()
-        st.pyplot(fig)
+        chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
+        st.altair_chart(chart, use_container_width=True)
         # st.checkbox("Show values on chart", value=True)
 
         # wordcloud visual
@@ -224,19 +241,10 @@ if st.session_state.active_view == "📊 Overview":
                 average_goal_achievement = ("goal_achievement", "mean"),
                 total_logs = ("log_id", 'count'),
                 habit_name = ("name", 'first')
-            ).reset_index().sort_values(by='average_goal_achievement', ascending=True))
+            ).reset_index().sort_values(by='average_goal_achievement', ascending=True)).round(2)
             # plot visual
-            fig,ax = plt.subplots(figsize=(6,4))
-            sns.barplot(y='habit_name',
-                        x='average_goal_achievement',
-                        data = habit_achievement,
-                        orient='h',
-                        ax=ax)
-            ax.set_xlabel('Average Goal Achievement (%)')
-            ax.set_ylabel("Habit")
-            ax.invert_yaxis()
-            plt.tight_layout()
-            st.pyplot(fig)
+            chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
+            st.altair_chart(chart, use_container_width=True)
 
 
 
@@ -300,6 +308,17 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         # convert to dataframe
         summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
         st.table(summary_df)
+
+        # line chart for activity logs against target
+        st.subheader('Log vs Target')
+        if tracking != "Yes/No (Completed or not)":
+            line_df = analytics_df[['log_date', 'activity', 'goal']]
+            line_df['log_date'] = line_df['log_date'].dt.normalize()
+            line_df['activity'] = line_df['activity'].astype(float)
+            line_df['goal'] = line_df['goal'].astype(float)
+            line_df = line_df.set_index('log_date')
+            st.line_chart(line_df, y_label=['Target', 'Actual'])
+            st.table(line_df)
 
 elif st.session_state.active_view == "🗃️ Data":
     df = merged_df.copy()
