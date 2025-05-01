@@ -109,8 +109,10 @@ def plot_bar_chart(df, group_col, value_col, x_title, y_title):
     )
     return chart
 
-def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value, target_label):
+def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None, y_min=None, y_max=None, y_tick_count=None):
     """Plots a line chart with altair"""
+    # df['display_date'] = pd.to_datetime(df[date_col]).dt.strftime('%a %d')
+    # df[date_col] = df[date_col].dt.strftime('%Y-%m-%d')
     df[date_col] = pd.to_datetime(df[date_col])
     df[value_col] = df[value_col].astype(float)
 
@@ -120,8 +122,14 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value, tar
     )
     
     line = chart.mark_line(point=True).encode(
-        x=alt.X(f'{date_col}:T',title=x_title),
-        y=alt.Y(f'{value_col}:Q', title=y_title),
+        x=alt.X(f'{date_col}:T',
+                title=x_title,
+                # sort=alt.SortField(field=date_col, order='ascending')
+                ),
+        y=alt.Y(f'{value_col}:Q', 
+                title=y_title,
+                scale=alt.Scale(domain=[y_min, y_max]) if y_min is not None and y_max is not None else alt.Undefined,
+                axis=alt.Axis(title=y_title, tickCount=y_tick_count) if y_tick_count else alt.Undefined),
         tooltip=[
             alt.Tooltip(f'{date_col}:T', title=x_title),
             alt.Tooltip(f'{value_col}:Q', title=y_title)
@@ -130,10 +138,13 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value, tar
 
     # add target line if specified
     if target_value is not None:
+        # target_df = pd.DataFrame({value_col: [target_value]})
+        # rule = alt.Chart(target_df).mark_rule(color='red').encode(y=alt.Y(f'{value_col}:Q'))
         # yscale = alt.Scale(domain=[
         #     min(df[value_col].min(), target_value),
         #     max(df[value_col].max(), target_value)
         # ])
+        
         rule = chart.mark_rule(color='red').encode(
             alt.Y(f'max({target_value}):Q'))
 
@@ -150,6 +161,8 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value, tar
         # )
 
         chart = line + rule
+    else:
+        chart = line
 
     return chart
 
@@ -352,9 +365,14 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         st.subheader('Log vs Target')
         if tracking != "Yes/No (Completed or not)":
             goal = int(goal)
-            chart = plot_line_chart(analytics_df, 'log_date', 'activity', 'Log Date', goal_units,'goal','Target')
+            chart = plot_line_chart(analytics_df, 'log_date', 'activity', 'Log Date', goal_units,'goal', y_min=0, y_max=goal+10, y_tick_count=5)
             st.altair_chart(chart, use_container_width=True)
 
+
+    with ana2:
+        st.subheader("Rating Trends")
+        chart = plot_line_chart(analytics_df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
+        st.altair_chart(chart, use_container_width=True)
 
 elif st.session_state.active_view == "🗃️ Data":
     df = merged_df.copy()
