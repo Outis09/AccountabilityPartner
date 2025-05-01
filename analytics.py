@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import seaborn as sns
 import calplot
@@ -166,6 +167,12 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None
 
     return chart
 
+def plot_calplot(df, date_col, cmap='YlGn'):
+    """Plots a calendar plot"""
+    cal_data = df.groupby(date_col).size()
+    cal_data.index = pd.to_datetime(cal_data.index)
+    fig,ax = calplot.calplot(cal_data, cmap=cmap, figsize=(8,3))
+    return fig,ax
 
 # sidebar for filters
 with st.sidebar:
@@ -302,9 +309,14 @@ if st.session_state.active_view == "📊 Overview":
 
     # log calendar visual
     st.subheader("Log Calendar")
-    cal_data = (overview_df.groupby('log_date').size())
-    cal_data.index = pd.to_datetime(cal_data.index)
-    fig, ax = calplot.calplot(cal_data, cmap="YlGn", figsize=(8,3))
+    # github_cmap = mcolors.ListedColormap([
+    # "#ebedf0",  # 0 contributions
+    # "#c6e48b",  # 1-9 contributions
+    # "#7bc96f",  # 10-19
+    # "#239a3b",  # 20-29
+    # "#196127"   # 30+
+    #     ])
+    fig,ax = plot_calplot(overview_df, 'log_date')
     st.pyplot(fig, use_container_width=True)
 elif st.session_state.active_view == "📈 Activity Analytics":
     st.header("Detailed Habit Analysis")
@@ -373,6 +385,12 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         st.subheader("Rating Trends")
         chart = plot_line_chart(analytics_df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
         st.altair_chart(chart, use_container_width=True)
+
+
+    # log calendar visual
+    st.subheader("Log Calendar")
+    fig,ax = plot_calplot(analytics_df, 'log_date', cmap='YlGn_r')
+    st.pyplot(fig, use_container_width=True)
 
 elif st.session_state.active_view == "🗃️ Data":
     df = merged_df.copy()
