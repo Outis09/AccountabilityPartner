@@ -10,6 +10,13 @@ import altair as alt
 # wordcloud
 from wordcloud import WordCloud
 from datetime import datetime, timedelta
+# sentiment analysis
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+# nltk.download(['vader_lexicon', 'punkt_tab', 'stopwords', 'wordnet'])
 
 # set page config
 st.set_page_config(
@@ -187,7 +194,59 @@ def create_wordcloud(df, notes_col):
         ax.axis('off')
         st.pyplot(fig)
 
+def text_preprocessor(text):
+    """Preprocesses text for sentiment analysis"""
+    # tokenize text
+    tokens = word_tokenize(text.lower())
+    # remove stopwords
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [token for token in tokens if token not in stop_words]
+    # lemmatize text
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in filtered_tokens]
+    # get processed text
+    processed_text = ' '.join(lemmatized_tokens)
+    return processed_text
 
+# initialize the VADER sentiment analyzer
+@st.cache_resource
+def load_nltk_resources():
+    resources = [
+        ('sentiment/vader_lexicon.zip', 'vader_lexicon'),
+        ('corpora/stopwords', 'stopwords'),
+        ('corpora/wordnet', 'wordnet')
+    ]
+
+    for resource_path, download_name in resources:
+        try:
+            nltk.data.find(resource_path)
+        except (LookupError, ImportError):
+            nltk.download(download_name)
+
+    return SentimentIntensityAnalyzer()
+sid = load_nltk_resources()
+def sentiment_analyzer(text):
+    """Analyzes the sentiment of a text"""
+    # get sentiment scores
+    scores = sid.polarity_scores(text)['compound']
+    # criteria for sentiment classification
+    if scores >= 0.05:
+        return 'positive'
+    elif scores <= -0.05:
+        return 'negative'
+    else:
+        return 'neutral'
+
+def get_sentiment_results(df, sentiment_col):
+    """Gets the percentage of each sentiment"""
+    sentiment_counts = df[sentiment_col].value_counts()
+    sentiment_percentage  = (sentiment_counts/len(df) * 100).round(2)
+    sentiment_df = pd.DataFrame({
+        'Sentiment': sentiment_counts.index,
+        'Percentage': sentiment_percentage.values
+    })
+    sentiment_df = sentiment_df.sort_values(by='Percentage', ascending=False).reset_index(drop=True)
+    return sentiment_df
 # sidebar for filters
 with st.sidebar:
     st.title("Accountability Partner")
@@ -264,6 +323,12 @@ if st.session_state.active_view == "📊 Overview":
         st.subheader("Highlights from your activity logs")
         # create wordcloud
         create_wordcloud(overview_df, 'log_notes')
+        # sentiment analysis
+        overview_df['processed_text'] = overview_df['log_notes'].apply(text_preprocessor)
+        overview_df['sentiment'] = overview_df['processed_text'].apply(sentiment_analyzer)
+        st.write('Sentiment Analysis')
+        overview_sentiments = get_sentiment_results(overview_df, 'sentiment')
+        st.dataframe(overview_sentiments, hide_index=True)
 
     with col2:
         # completion rate visual
@@ -290,7 +355,7 @@ if st.session_state.active_view == "📊 Overview":
         # convert completion rate list to dataframe
         consistency_df = pd.DataFrame(consistency_list)
         # dispay dataframe as table
-        st.dataframe(consistency_df)
+        st.dataframe(consistency_df, hide_index=True)
 
         # goal achievement visual
         st.subheader("Goal Achievement")
@@ -310,6 +375,7 @@ if st.session_state.active_view == "📊 Overview":
             # plot visual
             chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
             st.altair_chart(chart, use_container_width=True)
+
 
 
 
@@ -377,7 +443,7 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         }
         # convert to dataframe
         summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
-        st.table(summary_df)
+        st.dataframe(summary_df, hide_index=True)
 
         # line chart for activity logs against target
         st.subheader('Log vs Target')
@@ -394,6 +460,13 @@ elif st.session_state.active_view == "📈 Activity Analytics":
 
         st.subheader("Highlights from your activity logs")
         create_wordcloud(analytics_df, 'log_notes')
+        # sentiment analysis
+        analytics_df['processed_text'] = analytics_df['log_notes'].apply(text_preprocessor)
+        analytics_df['sentiment'] = analytics_df['processed_text'].apply(sentiment_analyzer)
+        st.write('Sentiment Analysis')
+        sentiment_df = get_sentiment_results(analytics_df, 'sentiment')
+        st.dataframe(sentiment_df, hide_index=True)
+
 
 
     # log calendar visual
@@ -406,7 +479,7 @@ elif st.session_state.active_view == "🗃️ Data":
     st.header("Your activity logs data")
     # tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
     st.write(f"Showing {len(df)} records based on your filter selections.")
-    st.dataframe(df)
+    st.dataframe(df, hide_index=True)
     # st.dataframe(habit_df)
 
 
