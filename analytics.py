@@ -174,6 +174,20 @@ def plot_calplot(df, date_col, cmap='YlGn'):
     fig,ax = calplot.calplot(cal_data, cmap=cmap, figsize=(8,3))
     return fig,ax
 
+def create_wordcloud(df, notes_col):
+    """Create wordcloud"""
+    notes = df[notes_col].dropna().to_list()
+    text = " ".join(notes)
+    if text.strip() == "":
+        st.info("Wordcloud not available because there are not enough notes from your logs to build the visual")
+    else:
+        wordcloud = WordCloud(width=800, height=400, background_color='white',colormap='viridis').generate(text)
+        fig,ax = plt.subplots(figsize=(6,4))
+        ax.imshow(wordcloud,interpolation='bilinear')
+        ax.axis('off')
+        st.pyplot(fig)
+
+
 # sidebar for filters
 with st.sidebar:
     st.title("Accountability Partner")
@@ -248,16 +262,8 @@ if st.session_state.active_view == "📊 Overview":
 
         # wordcloud visual
         st.subheader("Highlights from your activity logs")
-        notes = overview_df['log_notes'].dropna().to_list()
-        text = " ".join(notes)
-        if text.strip() == "":
-            st.info("Wordcloud not available because there are not enough notes from your logs to build the visual")
-        else:
-            wordcloud = WordCloud(width=800, height=400, background_color='white',colormap='viridis').generate(text)
-            fig,ax = plt.subplots(figsize=(6,4))
-            ax.imshow(wordcloud,interpolation='bilinear')
-            ax.axis('off')
-            st.pyplot(fig)
+        # create wordcloud
+        create_wordcloud(overview_df, 'log_notes')
 
     with col2:
         # completion rate visual
@@ -385,6 +391,9 @@ elif st.session_state.active_view == "📈 Activity Analytics":
         st.subheader("Rating Trends")
         chart = plot_line_chart(analytics_df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
         st.altair_chart(chart, use_container_width=True)
+
+        st.subheader("Highlights from your activity logs")
+        create_wordcloud(analytics_df, 'log_notes')
 
 
     # log calendar visual
