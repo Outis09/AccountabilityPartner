@@ -312,69 +312,73 @@ if st.session_state.active_view == "📊 Overview":
     col1, col2 = st.columns(2)
 
     with col1:
-        # average rating per habit visual
-        habit_averages = overview_df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
-        st.subheader("Average rating by activity")
-        chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
-        st.altair_chart(chart, use_container_width=True)
-        # st.checkbox("Show values on chart", value=True)
+        with st.container(height=400):
+            # average rating per habit visual
+            habit_averages = overview_df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
+            st.subheader("Average rating by activity")
+            chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
+            st.altair_chart(chart, use_container_width=True)
+            # st.checkbox("Show values on chart", value=True)
 
-        # wordcloud visual
-        st.subheader("Highlights from your activity logs")
-        # create wordcloud
-        create_wordcloud(overview_df, 'log_notes')
-        # sentiment analysis
-        overview_df['processed_text'] = overview_df['log_notes'].apply(text_preprocessor)
-        overview_df['sentiment'] = overview_df['processed_text'].apply(sentiment_analyzer)
-        st.write('Sentiment Analysis')
-        overview_sentiments = get_sentiment_results(overview_df, 'sentiment')
-        st.dataframe(overview_sentiments, hide_index=True)
+        with st.container(height=400):
+            # wordcloud visual
+            st.subheader("Highlights from your activity logs")
+            # create wordcloud
+            create_wordcloud(overview_df, 'log_notes')
+            # sentiment analysis
+            overview_df['processed_text'] = overview_df['log_notes'].apply(text_preprocessor)
+            overview_df['sentiment'] = overview_df['processed_text'].apply(sentiment_analyzer)
+            st.write('Sentiment Analysis')
+            overview_sentiments = get_sentiment_results(overview_df, 'sentiment')
+            st.dataframe(overview_sentiments, hide_index=True)
 
     with col2:
         # completion rate visual
-        st.subheader("Completion Rate")
-        today = pd.to_datetime(datetime.now().date())
-        consistency_list = []
-        unique_habits = overview_df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
-        for index,row in unique_habits.iterrows():
-            habit_id = row['habit_id']
-            name = row['name']
-            frequency = row['frequency']
-            start_date = pd.to_datetime(row['start_date'])
-            # actual logs
-            actual_logs = overview_df[overview_df['habit_id'] == habit_id].shape[0]
-            # calculate expected logs based on habit frequency
-            expected_logs = calculate_expected_logs(start_date, frequency)
-            consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
-            consistency_list.append({
-                "Habit": name,
-                "Expected Logs": expected_logs,
-                "Actual Logs":actual_logs,
-                "Completion Rate(%)": float(consistency_rate)
-            })
-        # convert completion rate list to dataframe
-        consistency_df = pd.DataFrame(consistency_list)
-        # dispay dataframe as table
-        st.dataframe(consistency_df, hide_index=True)
+        with st.container(height=400):
+            st.subheader("Completion Rate")
+            today = pd.to_datetime(datetime.now().date())
+            consistency_list = []
+            unique_habits = overview_df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
+            for index,row in unique_habits.iterrows():
+                habit_id = row['habit_id']
+                name = row['name']
+                frequency = row['frequency']
+                start_date = pd.to_datetime(row['start_date'])
+                # actual logs
+                actual_logs = overview_df[overview_df['habit_id'] == habit_id].shape[0]
+                # calculate expected logs based on habit frequency
+                expected_logs = calculate_expected_logs(start_date, frequency)
+                consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
+                consistency_list.append({
+                    "Habit": name,
+                    "Expected Logs": expected_logs,
+                    "Actual Logs":actual_logs,
+                    "Completion Rate(%)": float(consistency_rate)
+                })
+            # convert completion rate list to dataframe
+            consistency_df = pd.DataFrame(consistency_list)
+            # dispay dataframe as table
+            st.dataframe(consistency_df, hide_index=True)
 
-        # goal achievement visual
-        st.subheader("Goal Achievement")
-        # filter for only tracking types that allow for goal tracking
-        goal_df = overview_df[overview_df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
-        if goal_df.shape[0] == 0:
-            st.write("This category does not have habits to be displayed for this visual")
-        else:
-            # calculate achievement per activity log
-            goal_df['goal_achievement'] = ((goal_df['activity'].astype(float) / goal_df['goal'].astype('float')) * 100).clip(upper=100)
-            # group by habit
-            habit_achievement = (goal_df.groupby('habit_id').agg(
-                average_goal_achievement = ("goal_achievement", "mean"),
-                total_logs = ("log_id", 'count'),
-                habit_name = ("name", 'first')
-            ).reset_index().sort_values(by='average_goal_achievement', ascending=True)).round(2)
-            # plot visual
-            chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
-            st.altair_chart(chart, use_container_width=True)
+        with st.container(height=400):
+            # goal achievement visual
+            st.subheader("Goal Achievement")
+            # filter for only tracking types that allow for goal tracking
+            goal_df = overview_df[overview_df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
+            if goal_df.shape[0] == 0:
+                st.write("This category does not have habits to be displayed for this visual")
+            else:
+                # calculate achievement per activity log
+                goal_df['goal_achievement'] = ((goal_df['activity'].astype(float) / goal_df['goal'].astype('float')) * 100).clip(upper=100)
+                # group by habit
+                habit_achievement = (goal_df.groupby('habit_id').agg(
+                    average_goal_achievement = ("goal_achievement", "mean"),
+                    total_logs = ("log_id", 'count'),
+                    habit_name = ("name", 'first')
+                ).reset_index().sort_values(by='average_goal_achievement', ascending=True)).round(2)
+                # plot visual
+                chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
+                st.altair_chart(chart, use_container_width=True)
 
 
 
@@ -396,76 +400,85 @@ elif st.session_state.active_view == "📈 Activity Analytics":
     ana1, ana2 = st.columns(2)
 
     with ana1:
-        # create summary table
-        st.subheader("Activity Summary")
-        habit = analytics_df.iloc[0]
-        name = habit['name']
-        goal = habit['goal']
-        goal_units = habit['goal_units']
-        frequency = habit['frequency']
-        tracking = habit['tracking_type']
-        start_date = habit['start_date']
+        with st.container(height=400):
+            # create summary table
+            st.subheader("Activity Summary")
+            habit = analytics_df.iloc[0]
+            name = habit['name']
+            goal = habit['goal']
+            goal_units = habit['goal_units']
+            frequency = habit['frequency']
+            tracking = habit['tracking_type']
+            start_date = habit['start_date']
 
-        # goal achievement
-        if tracking == "Yes/No (Completed or not)":
-            analytics_df['goal_achievement'] = np.nan
-        else:
-            analytics_df['goal_achievement'] = ((analytics_df['activity'].astype(float) / goal.astype(float)) * 100).clip(upper=100)
-        # average goal achievement
-        avg_goal = analytics_df['goal_achievement'].mean()
-        # average rating
-        avg_rating = analytics_df['rating'].mean()
-        # first and last logs
-        first_log = analytics_df['log_date'].min()
-        last_log = analytics_df['log_date'].max()
-        # total logs
-        total_logs = analytics_df.shape[0]
-        # expected logs
-        expected_logs = calculate_expected_logs(start_date, frequency)
-        # target
-        if pd.notna(goal) and goal not in [0, ""]:
-            target = f"{int(goal)}  {goal_units.lower()}  {frequency.lower()}"
-        else:
-            target = frequency
-        # streaks
-        dates = analytics_df['log_date'].to_list()
-        longest_streak, current_streak = calculate_streaks(dates, frequency)
-        summary_data = {
-            'Activity': name,
-            'Target': target,
-            'Expected Logs': expected_logs,
-            'Total Logs': total_logs,
-            'Average Rating': round(avg_rating, 2),
-            'First Log Date': first_log.date(),
-            'Last Log Date': last_log.date(),
-            'Longest Streak': longest_streak,
-            'Current Streak': current_streak
-        }
-        # convert to dataframe
-        summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
-        st.dataframe(summary_df, hide_index=True)
+            # goal achievement
+            if tracking == "Yes/No (Completed or not)":
+                analytics_df['goal_achievement'] = np.nan
+            else:
+                analytics_df['goal_achievement'] = ((analytics_df['activity'].astype(float) / goal.astype(float)) * 100).clip(upper=100)
+            # average goal achievement
+            avg_goal = analytics_df['goal_achievement'].mean()
+            # average rating
+            avg_rating = analytics_df['rating'].mean()
+            # first and last logs
+            first_log = analytics_df['log_date'].min()
+            last_log = analytics_df['log_date'].max()
+            # total logs
+            total_logs = analytics_df.shape[0]
+            # expected logs
+            expected_logs = calculate_expected_logs(start_date, frequency)
+            # completion rate
+            completion_rate = round((total_logs/expected_logs) * 100,2)
+            # target
+            if pd.notna(goal) and goal not in [0, ""]:
+                target = f"{int(goal)}  {goal_units.lower()}  {frequency.lower()}"
+            else:
+                target = frequency
+            # streaks
+            dates = analytics_df['log_date'].to_list()
+            longest_streak, current_streak = calculate_streaks(dates, frequency)
+            summary_data = {
+                'Activity': name,
+                'Target': target,
+                'Expected Logs': expected_logs,
+                'Total Logs': total_logs,
+                'Completion Rate': f'{completion_rate}%',
+                'Average Rating': round(avg_rating, 2),
+                'First Log Date': first_log.date(),
+                'Last Log Date': last_log.date(),
+                'Longest Streak': longest_streak,
+                'Current Streak': current_streak
+            }
+            # convert to dataframe
+            summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
+            st.dataframe(summary_df, hide_index=True)
 
-        # line chart for activity logs against target
-        st.subheader('Log vs Target')
-        if tracking != "Yes/No (Completed or not)":
-            goal = int(goal)
-            chart = plot_line_chart(analytics_df, 'log_date', 'activity', 'Log Date', goal_units,'goal', y_min=0, y_max=goal+10, y_tick_count=5)
-            st.altair_chart(chart, use_container_width=True)
+        with st.container(height=400):
+            # line chart for activity logs against target
+            st.subheader('Log vs Target')
+            if tracking != "Yes/No (Completed or not)":
+                goal = int(goal)
+                chart = plot_line_chart(analytics_df, 'log_date', 'activity', 'Log Date', goal_units,'goal', y_min=0, y_max=goal+10, y_tick_count=5)
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.info("This visual is not available for this activity")
 
 
     with ana2:
-        st.subheader("Rating Trends")
-        chart = plot_line_chart(analytics_df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
-        st.altair_chart(chart, use_container_width=True)
+        with st.container(height=400):
+            st.subheader("Rating Trends")
+            chart = plot_line_chart(analytics_df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
+            st.altair_chart(chart, use_container_width=True)
 
-        st.subheader("Highlights from your activity logs")
-        create_wordcloud(analytics_df, 'log_notes')
-        # sentiment analysis
-        analytics_df['processed_text'] = analytics_df['log_notes'].apply(text_preprocessor)
-        analytics_df['sentiment'] = analytics_df['processed_text'].apply(sentiment_analyzer)
-        st.write('Sentiment Analysis')
-        sentiment_df = get_sentiment_results(analytics_df, 'sentiment')
-        st.dataframe(sentiment_df, hide_index=True)
+        with st.container(height=400):
+            st.subheader("Highlights and Sentiment Analysis from your activity logs")
+            create_wordcloud(analytics_df, 'log_notes')
+            # sentiment analysis
+            analytics_df['processed_text'] = analytics_df['log_notes'].apply(text_preprocessor)
+            analytics_df['sentiment'] = analytics_df['processed_text'].apply(sentiment_analyzer)
+            st.write('Sentiment Analysis')
+            sentiment_df = get_sentiment_results(analytics_df, 'sentiment')
+            st.dataframe(sentiment_df, hide_index=True)
 
 
 
