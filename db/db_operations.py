@@ -2,9 +2,10 @@
 import sqlite3
 from tkinter import messagebox
 import pandas as pd
+import streamlit as st
 
 # db name
-db = 'accountability.db'
+db = 'data/accountability.db'
 
 # function to save habits
 def insert_habit(name, start_date, frequency, tracking,goal, goal_units, category, notes, end_date):
@@ -93,20 +94,34 @@ def get_habit_id(habit):
     conn.close()
     return id[0]
 
-def safe_db_call(db_function, *args, success_message="Operation Successful"):
+def safe_db_call(db_function, *args, success_message="Operation Successful", framework='tkinter'):
     try:
         db_function(*args)
-        messagebox.showinfo("Success", success_message)
+        if framework == 'tkinter':
+            messagebox.showinfo("Success", success_message)
+        elif framework == 'streamlit':
+            st.success(success_message)
         return True
-    except sqlite3.IntegrityError as e:
-        messagebox.showerror("Integrity Error", f"Data constraint violated: {e}")
-    except sqlite3.OperationalError as e:
-        messagebox.showerror("Operational Error", f"Database error: {e}")
-    except sqlite3.ProgrammingError as e:
-        messagebox.showerror("Programming Error", f"Code issue: {e}")
-    except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"An unexpected error occurred: {e}")
-    return False
+    except Exception as e:
+        if framework == 'tkinter':
+            if isinstance(e, sqlite3.IntegrityError):
+                messagebox.showerror("Integrity Error", f"Data constraint violated: {e}")
+            elif isinstance(e, sqlite3.OperationalError):
+                messagebox.showerror("Operational Error", f"Database error: {e}")
+            elif isinstance(e, sqlite3.ProgrammingError):
+                messagebox.showerror("Programming Error", f"Code issue: {e}")
+            else:
+                messagebox.showerror("Database Error", f"An unexpected error occurred: {e}")
+        elif framework == "streamlit":
+            if isinstance(e, sqlite3.IntegrityError):
+                st.error(f"Data constraint violated: {e}")
+            elif isinstance(e, sqlite3.OperationalError):
+                st.error(f"Database error: {e}")
+            elif isinstance(e, sqlite3.ProgrammingError):
+                st.error(f"Code issue: {e}")
+            else:
+                st.error(f"An unexpected database error occurred: {e}")
+        return False
 
 def get_all_habits_to_df():
     """Get all data for habits"""
@@ -116,7 +131,7 @@ def get_all_habits_to_df():
     cursor = conn.cursor()
     # query to get all habits data
     cursor.execute("""
-    SELECT name, start_date, frequency, category, tracking_type,goal, goal_units,notes, end_date
+    SELECT habit_id, name, start_date, frequency, category, tracking_type,goal, goal_units,notes, end_date
     FROM habits
     """)
     # get rows
@@ -137,7 +152,7 @@ def get_all_activity_logs():
     cursor = conn.cursor()
     # query to get all habits data
     cursor.execute("""
-    SELECT h.name, a.log_date, a.activity, a.rating, a.log_notes
+    SELECT a.log_id, a.habit_id, h.name, a.log_date, a.activity, a.rating, a.log_notes
     FROM activity_logs a
     JOIN habits h on a.habit_id = h.habit_id
     """)
@@ -146,10 +161,10 @@ def get_all_activity_logs():
     # get column names
     columns = [description[0] for description in cursor.description]
     # convert to dataframe
-    habits_df = pd.DataFrame(rows, columns=columns)
+    activity_df = pd.DataFrame(rows, columns=columns)
     # close connection
     conn.close()
-    return habits_df
+    return activity_df
 
 
     

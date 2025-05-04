@@ -20,6 +20,7 @@ from habits import Habits  # Importing the Habits class from the habits module
 from db import init_db
 from activity_logs import Activity
 from export_data import DataExporter
+import helper as hp
 
 class AccountabilityPartner:
     """
@@ -33,8 +34,10 @@ class AccountabilityPartner:
         root.geometry("800x700")
         root.title("Accountability Partner")
 
+        # logo path
+        self.logo_path = hp.resource_path('images/AppLogo.png')
         # load and resize image
-        self.load_and_resize_image('AppLogo.png', (400, 400))
+        self.load_and_resize_image(self.logo_path, (400, 400))
 
         # show welcome screen
         self.show_welcome_screen()
@@ -140,7 +143,8 @@ class AccountabilityPartner:
 
     def open_streamlit(self):
         """Opens Streamlit in browser for data visualization"""
-        subprocess.Popen(['streamlit', 'run', 'analytics.py'])
+        script_path = os.path.join(os.path.dirname(__file__), "analytics.py")
+        subprocess.Popen(['streamlit', 'run', script_path])
 
 
 # run the main application loop

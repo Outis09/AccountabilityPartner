@@ -101,7 +101,7 @@ class Habits:
         
         
         # file to store habit categories
-        self.category_file = "categories.json"
+        self.category_file = "data/categories.json"
         # default categories
         self.default_categories = ["Health", "Productivity", "Finance", "Learning"]
 
@@ -208,8 +208,9 @@ class Habits:
                 saved = json.load(file)
             cats = list(set(self.default_categories + saved))
         else:
-            cats = self.default_categories.append("Other")
-        cats.append("Other")
+            cats = list(self.default_categories)
+        if 'Other' not in cats:
+            cats.append("Other")
         return cats
         
     # function to save new category to file

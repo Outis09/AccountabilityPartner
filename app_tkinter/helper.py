@@ -1,6 +1,8 @@
 # import libraries
 import tkinter as tk
 from tkinter import ttk, messagebox
+import sys
+import os
 
 
 # class for scrollable frame
@@ -79,4 +81,10 @@ def back_to_main_window(self):
     self.window.destroy()
     self.main_window.deiconify()
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
 
+    return os.path.join(base_path, relative_path)

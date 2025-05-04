@@ -6,13 +6,13 @@ def initialize_database():
     Initialize db and create necessary tables
     """
     # connect to accountability.db if exists or create if otherwise
-    conn = sqlite3.connect("accountability.db")
+    conn = sqlite3.connect("data/accountability.db")
     cursor = conn.cursor()
 
     # create habits table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS habits(
-                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                    name TEXT NOT NULL,
                    start_date TEXT,
                    frequency TEXT,

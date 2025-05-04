@@ -101,8 +101,10 @@ class DataExporter:
         option = self.download_option.get()
         if option == "Export all habit data":
             df = db.get_all_habits_to_df()
+            df.drop(columns='habit_id', inplace=True)
         elif option == "Export all activity logs":
             df = db.get_all_activity_logs()
+            df.drop(columns=['habit_id', 'log_id'], inplace=True)
         elif not option:
             messagebox.showinfo("Data Information", "No option selected!")
             return
