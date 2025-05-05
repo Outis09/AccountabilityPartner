@@ -5,6 +5,9 @@ from tkcalendar import DateEntry
 from datetime import date
 import textwrap
 import helper as hp
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from db import db_operations as db
 
 class Activity:

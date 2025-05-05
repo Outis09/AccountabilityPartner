@@ -13,7 +13,9 @@ from PIL import Image, ImageTk  # For image handling and display
 import pandas as pd  # For handling data manipulation and export
 from datetime import datetime  # For timestamping exported files
 import os  # For interacting with the operating system
-from pathlib import Path  # For managing file paths
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# from pathlib import Path  # For managing file paths
 import subprocess
 
 from habits import Habits  # Importing the Habits class from the habits module
@@ -143,8 +145,8 @@ class AccountabilityPartner:
 
     def open_streamlit(self):
         """Opens Streamlit in browser for data visualization"""
-        script_path = os.path.join(os.path.dirname(__file__), "analytics.py")
-        subprocess.Popen(['streamlit', 'run', script_path])
+        # script_path = os.path.join(os.path.dirname(__file__), "analytics.py")
+        subprocess.Popen(['streamlit', 'run', 'analytics.py'])
 
 
 # run the main application loop
