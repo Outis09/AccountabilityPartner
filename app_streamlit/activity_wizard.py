@@ -9,18 +9,20 @@ from datetime import date
 import textwrap
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from db import db_operations as db  
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# from db import db_operations as db  
+from app_streamlit.utils import supabase_client as supabase
 
-
+username = st.session_state.get("username")
+# supabase = supabase.init_supabase()
 
 def load_categories():
     """Load categories"""
-    return db.get_categories()
+    return supabase.get_categories(username)
 
 def load_habits(selected_category):
     """Load habits for selected category"""
-    return db.get_habits(selected_category)
+    return supabase.get_habits(username,selected_category)
 
 
 # select Category and Habit
@@ -30,6 +32,7 @@ def step1_select_habit():
 
     categories = load_categories()
     selected_cat = st.selectbox("Select a Category", categories)
+    # st.write(categories, username)
 
     habits = []
     if selected_cat:
@@ -46,7 +49,7 @@ def step1_select_habit():
         st.session_state.activity_data = {
             "category": selected_cat,
             "habit": selected_habit,
-            "habit_id": db.get_habit_id(selected_habit),
+            "habit_id": int(supabase.get_habit_id(username,selected_habit)),
             "tracking_type": st.session_state.habit_details.get(selected_habit)
         }
         st.session_state.activity_step = 2
@@ -71,7 +74,7 @@ def step2_log_details():
     elif data['tracking_type'] == "Duration (Minutes/hours)":
         tracking_input = st.number_input("How many minutes did you spend on this activity?", min_value=0, step=5)
 
-    rating = st.number_input("Rate your productivity during this activity (1-5)", min_value=1, max_value=5, step=1)
+    rating = int(st.number_input("Rate your productivity during this activity (1-5)", min_value=1, max_value=5, step=1))
 
     comments = st.text_area("Any comments?", height=100)
 
@@ -130,14 +133,13 @@ def step3_confirm_and_save():
     with col2:
         if st.button("✅ Confirm and Save", key="step3_confirm"):
             with st.spinner("Saving activity..."):
-                success= db.safe_db_call(
-                    db.insert_activity,
+                success= supabase.insert_activity_log(
+                    username,
                     data['habit_id'],
                     data['activity_date'],
                     data['tracking_input'],
                     data['rating'],
-                    data['comments'],
-                    framework="streamlit"
+                    data['comments']
                 )
             if success:
                 st.success("Activity successfully logged!")

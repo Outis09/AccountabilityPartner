@@ -1,18 +1,15 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import numpy as np
-import seaborn as sns
 import calplot
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from db import db_operations as db
 import altair as alt
 # wordcloud
 from wordcloud import WordCloud
-from datetime import datetime, timedelta
+from datetime import datetime
 # sentiment analysis
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -29,27 +26,6 @@ if 'view_radio' not in st.session_state:
 
 # container for the main view selector
 view_container = st.container()
-
-# sidebar for filters
-
-
-
-# load and cache data
-@st.cache_data
-def load_data():
-    """Load habits and activity logs dataframe"""
-    habit_df = db.get_all_habits_to_df()
-    activity_df = db.get_all_activity_logs()
-    merged_df = pd.merge(activity_df, habit_df, on='habit_id', how='left')
-    merged_df.drop(columns='name_y', inplace=True)
-    merged_df.rename(columns={'name_x':'name'}, inplace=True)
-    return habit_df, activity_df,merged_df
-
-
-
-habit_df, activity_df, merged_df = load_data()
-merged_df['log_date'] = pd.to_datetime(merged_df['log_date'])
-
 
 
 # function to calculate streaks
@@ -248,7 +224,6 @@ def show_sidebar(merged_df):
     with st.sidebar:
         st.title('Filters')
         if st.session_state.sub_option == "📊 Overview":
-            st.write("Testing")
             # date filters for overview page
             start_date = st.date_input("Start date", merged_df['log_date'].min().date())
             end_date = st.date_input("End date", merged_df['log_date'].max().date())
@@ -478,7 +453,8 @@ def show_visuals(df):
 
 
 
-def show_analytics():
+def show_analytics(merged_df):
+    """Main function to show the analytics page"""
     st.radio(label="Sub", options=["📊 Overview", "📈 Activity Analytics", "🗃️ Data"], key="sub_option", label_visibility='collapsed', horizontal=True)
     df = show_sidebar(merged_df)
     show_visuals(df)

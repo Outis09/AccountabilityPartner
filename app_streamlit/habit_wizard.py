@@ -10,7 +10,8 @@ import json
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from db.db_operations import safe_db_call, insert_habit
+# from db.db_operations import safe_db_call, insert_habit
+from app_streamlit.utils import supabase_client as supabase
 import time
 
 # setup session state 
@@ -151,25 +152,23 @@ def step2_confirm():
         if st.button("✅ Confirm and Save"):
             try:
                 st.write("Attempting to save habit...")
-                success = safe_db_call(
-                    insert_habit,
+                success = supabase.insert_habit(
+                    st.session_state.username,
                     data['habit'],
-                    data['start_date'],
+                    data['start_date'].isoformat(),
                     data['frequency'],
                     data['tracking'],
                     data['goal'],
                     data['goal_units'],
                     data['category'],
                     data['notes'],
-                    data['end_date'] if data['end_date_status'] == "Specific Date" else None,
-                    success_message= "✅ Habit saved successfully!",
-                    framework='streamlit'
+                    data['end_date'].isoformat() if data['end_date_status'] == "Specific Date" else None
                 )
                 if success:
                     if data['category'] not in load_categories():
                         save_custom_category(data['category'])
                     
-                    # st.success("✅ Habit saved successfully!")
+                    st.success("✅ Habit saved successfully!")
                     # st.session_state.habit_saved = True
                     
                     time.sleep(0.2)
