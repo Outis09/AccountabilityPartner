@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+matplotlib
+altair
+calplot
+wordcloud
+nltk
+PyYAML
+streamlit-authenticator
+supabase
+python-dotenv
