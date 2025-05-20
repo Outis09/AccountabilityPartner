@@ -4,16 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 from datetime import datetime, timedelta
-import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-from streamlit_authenticator.utilities import (CredentialsError,
-                                               ForgotError,
-                                               Hasher,
-                                               LoginError,
-                                               RegisterError,
-                                               ResetError,
-                                               UpdateError)
+import os
+from supabase import create_client, Client
 
 # Set page configuration
 st.set_page_config(page_title="Accountability Partner",
@@ -24,6 +18,7 @@ from habit_wizard import create_habit_wizard
 from activity_wizard import create_activity_wizard
 import analytics as an
 from utils import supabase_client as sp
+from app_streamlit import user_auth as auth
 
 
 # Initialize session state variables if they don't exist
@@ -37,6 +32,8 @@ if 'forgot_password' not in st.session_state:
     st.session_state.forgot_password = False
 if 'authenticator' not in st.session_state:
     st.session_state.authenticator = None
+if 'authentication_status' not in st.session_state:
+    st.session_state['authentication_status'] = None
 if 'just_logged_in' not in st.session_state:
     st.session_state.just_logged_in = False
 if 'active_view' not in st.session_state:
@@ -47,15 +44,11 @@ if 'sub_option' not in st.session_state:
     st.session_state.sub_option = "📊 Overview"
 if 'username' not in st.session_state:
     st.session_state.username = None
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = None
 if 'supabase' not in st.session_state:
     st.session_state.supabase = sp.init_supabase()
 
-# # initialize supabase client
-# @st.cache_resource
-# def init_supabase():
-#     url=st.secrets["SUPABASE_URL"]
-#     key=st.secrets["SUPABASE_KEY"]
-#     return create_client(url, key)
 
 supabase = sp.init_supabase()
 
@@ -65,36 +58,9 @@ def update_active_view():
     st.session_state.active_view = st.session_state.view_radio
 
 
-def load_auth_config():
-    """Load and return the authentication configuration file."""
-    try:
-        with open('config.yaml', 'r', encoding='utf-8') as file:
-            config = yaml.load(file, Loader=SafeLoader)
-            return config
-    except FileNotFoundError:
-        st.error("Configuration file not found. Please make sure 'config.yaml' exists.")
-        return None
-    
-def initialize_authenticator():
-    """Initialize the Streamlit authenticator with the loaded configuration."""
-    if st.session_state.authenticator is None:
-        config = load_auth_config()
-        if config:
-            st.session_state.authenticator = stauth.Authenticate('config.yaml'
-                # config['credentials'],
-                # config['cookie']['name'],
-                # config['cookie']['key'],
-                # config['cookie']['expiry_days']
-            )
-            if 'authentication_status' not in st.session_state:
-                st.session_state['authentication_status'] = None
-
 
 def show_home():
     """Display the home page with login, signup, and demo options."""
-
-    # load config file
-    config = load_auth_config()
     
     left_column, centre_column, right_column = st.columns([1,3,1])
     with centre_column:
@@ -138,59 +104,95 @@ def show_home():
 
         # show login form if login button was clicked
         if st.session_state.show_login:
-            st.session_state.authenticator.login()
-            if st.session_state['authentication_status']:
-                st.success('Logged in as: {}'.format(st.session_state['username']))
-                time.sleep(1)
-                st.session_state.just_logged_in = True
-                st.session_state.current_page = "main"
-                st.rerun()
-            elif st.session_state["authentication_status"] is False:
-                st.error('Username/password is incorrect')
-            elif st.session_state["authentication_status"] is None:
-                st.warning('Please enter your username and password')
+            with st.container(border=True):
+                st.subheader("Login")
+                st.write("Please enter your username and password to log in.")
+                # show login form
+                username = st.text_input("Username", key="login_username")
+                password = st.text_input("Password", type="password", key="login_password")
+                col1, col2 = st.columns([1,3])
+                with col1:
+                    user_login_button = st.button("Login")
+                if user_login_button:
+                    success, user, error  = auth.login_user(username, password)
+
+                    if success:
+                        st.success("Login successful!")
+                        time.sleep(1)
+                        st.session_state.just_logged_in = True
+                        st.session_state.current_page = "main"
+                        st.session_state['authentication_status'] = True
+                        st.session_state.username = user['username']
+                        st.session_state.user_id = user['user_id']
+                        st.rerun()
+                    else:
+                        st.error(error)
+
 
         # show signup form if signup button was clicked
         if st.session_state.show_signup:
-            try:
-                (email_of_registered_user,
-                username_of_registered_user,
-                name_of_registered_user) = st.session_state.authenticator.register_user(pre_authorized=config['preauthorized']['emails'])
-                if email_of_registered_user:
-                    st.success('User registered successfully')
-            except RegisterError as e:
-                st.error(e)
-                url = "https://www.linkedin.com/in/samuel-ayer/"
-                st.info('Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
+            with st.container(border=True):
+                st.subheader("Sign Up")
+                st.write("Please enter your details to create an account.")
+                # show signup form
+                email = st.text_input("Email", key="email")
+                username = st.text_input("Username", key="signup_username")
+                firstname = st.text_input("First Name", key="firstname")
+                lastname = st.text_input("Last Name", key="lastname")
+                password = st.text_input("Password", type="password", key="signup_password")
+                repeat_password = st.text_input("Repeat Password", type="password", key="repeat_password")
+                col1, col2 = st.columns([1,3])
+                with col1:
+                    user_signup_button = st.button("Sign Up")
+                if user_signup_button:
+                    success, message = auth.register_user(email, username, firstname, lastname, password, repeat_password)
+                    if success:
+                        st.success(message)
+                        time.sleep(3)
+                        st.session_state.show_signup = False
+                        st.session_state.show_login = True
+                        st.session_state.forgot_password = False
+                        st.rerun()
+                    else:
+                        st.error(message)
+                        url = "https://www.linkedin.com/in/samuel-ayer/"
+                        st.info('Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
 
-        # show forgot password form if forgot password button was clicked
-        if st.session_state.forgot_password:
-            try:
-                (username_of_forgotten_password,
-                email_of_forgotten_password,
-                new_random_password) = st.session_state.authenticator.forgot_password()
-                if username_of_forgotten_password:
-                    st.success(f"New password **'{new_random_password}'** to be sent to user securely")
-                    with open('config.yaml', 'w') as file:
-                        yaml.dump(st.session_state.authenticator.credentials, file,default_flow_style=False)
-                    #config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
-                 # Random password to be transferred to the user securely
-                elif not username_of_forgotten_password:
-                    st.error('Username not found')
-            except ForgotError as e:
-                st.error(e)
+        # # show forgot password form if forgot password button was clicked
+        # if st.session_state.forgot_password:
+        #     try:
+        #         (username_of_forgotten_password,
+        #         email_of_forgotten_password,
+        #         new_random_password) = st.session_state.authenticator.forgot_password()
+        #         if username_of_forgotten_password:
+        #             st.success(f"New password **'{new_random_password}'** to be sent to user securely")
+        #             with open('config.yaml', 'w') as file:
+        #                 yaml.dump(st.session_state.authenticator.credentials, file,default_flow_style=False)
+        #             #config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+        #          # Random password to be transferred to the user securely
+        #         elif not username_of_forgotten_password:
+        #             st.error('Username not found')
+        #     except ForgotError as e:
+        #         st.error(e)
 
 def show_main_app():
     """Display the main application dashboard after login."""
     
     st.title("Accountability Partner Dashboard")
 
-    if st.session_state.get('authentication_status'):
-        st.session_state.username = st.session_state['username']
+    if st.session_state['authentication_status']:
+        # st.session_state.username = st.session_state['username']
         st.write(f"*{st.session_state.username}*, Welcome to your dashboard! Here you can log and track your habits and activities.")
         st.info("Use the radio to navigate through different features.")
         # log out button
-        st.session_state.authenticator.logout()
+        # st.session_state.authenticator.logout()
+        if st.button("Logout"):
+            st.session_state.current_page = "home"
+            st.session_state.show_login = False
+            st.session_state.show_signup = False
+            st.session_state.forgot_password = False
+            st.session_state.username=None
+            st.rerun()
 
 
         # main radio selections
@@ -202,7 +204,7 @@ def show_main_app():
                      label_visibility='collapsed')
     
         # get user data
-        habits_df, activities_df, merged_df = sp.get_data(st.session_state.username)
+        habits_df, activities_df, merged_df = sp.get_data(st.session_state.user_id)
         
         if main_view == "Create Habit" or st.session_state.just_logged_in:
             st.session_state.just_logged_in = False
@@ -233,7 +235,7 @@ def show_main_app():
 
 def main():
     """Main function to run the Streamlit app."""
-    initialize_authenticator()
+    # initialize_authenticator()
     # Show home page
     if st.session_state.current_page == "home":
         show_home()
