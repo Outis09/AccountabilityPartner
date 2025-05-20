@@ -153,7 +153,7 @@ def step2_confirm():
             try:
                 st.write("Attempting to save habit...")
                 success = supabase.insert_habit(
-                    st.session_state.username,
+                    st.session_state.user_id,
                     data['habit'],
                     data['start_date'].isoformat(),
                     data['frequency'],

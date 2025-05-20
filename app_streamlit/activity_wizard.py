@@ -14,15 +14,16 @@ import sys
 from app_streamlit.utils import supabase_client as supabase
 
 username = st.session_state.get("username")
+user_id = st.session_state.get("user_id")
 # supabase = supabase.init_supabase()
 
 def load_categories():
     """Load categories"""
-    return supabase.get_categories(username)
+    return supabase.get_categories(user_id)
 
 def load_habits(selected_category):
     """Load habits for selected category"""
-    return supabase.get_habits(username,selected_category)
+    return supabase.get_habits(user_id,selected_category)
 
 
 # select Category and Habit
@@ -32,7 +33,8 @@ def step1_select_habit():
 
     categories = load_categories()
     selected_cat = st.selectbox("Select a Category", categories)
-    # st.write(categories, username)
+    # st.write("Selected Category:", categories)
+    # st.write(categories, user_id)
 
     habits = []
     if selected_cat:

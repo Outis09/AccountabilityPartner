@@ -11,14 +11,14 @@ def init_supabase():
 
 # function to get user data
 # @st.cache_data
-def get_data(username):
+def get_data(user_id):
     """Fetch user data from the database."""
     # get supabase client
     supabase = st.session_state.supabase
-    if username is None:
+    if user_id is None:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-    habits =  supabase.table("habits").select("*").eq("username", username).execute()
-    activities = supabase.table("activity_logs").select("*").eq("username", username).execute()
+    habits =  supabase.table("habits").select("*").eq("user_id", user_id).execute()
+    activities = supabase.table("activity_logs").select("*").eq("user_id", user_id).execute()
     habits_df = pd.DataFrame(habits.data)
     activities_df = pd.DataFrame(activities.data)
     if habits_df.empty and activities_df.empty:
@@ -33,24 +33,24 @@ def get_data(username):
 
 # get distinct categories
 @st.cache_data
-def get_categories(username):
+def get_categories(user_id):
     """Fetch distinct categories from the database."""
     # get supabase client
     supabase = st.session_state.supabase
-    if username is None:
+    if user_id is None:
         return []
-    categories = supabase.table("habits").select("category").eq("username", username).execute()
+    categories = supabase.table("habits").select("category").eq("user_id", user_id).execute()
     categories_df = pd.DataFrame(categories.data)
     return categories_df['category'].dropna().unique().tolist()
 
 # get distinct habits for a category
 @st.cache_data 
-def get_habits(username, category):
+def get_habits(user_id, category):
     """Fetch distinct habits and tracking types for a category from the database."""
     supabase = st.session_state.supabase
-    if username is None or category is None:
+    if user_id is None or category is None:
         return {}
-    habits = supabase.table("habits").select("name, tracking_type").eq("username", username).eq("category", category).execute()
+    habits = supabase.table("habits").select("name, tracking_type").eq("user_id", user_id).eq("category", category).execute()
     habits_df = pd.DataFrame(habits.data)
     if habits_df.empty:
         return {}
@@ -59,13 +59,13 @@ def get_habits(username, category):
 
 # get habit id
 @st.cache_data
-def get_habit_id(username, habit_name):
+def get_habit_id(user_id, habit_name):
     """Fetch habit id for a habit name from the database."""
     # get supabase client
     supabase = st.session_state.supabase
-    if username is None or habit_name is None:
+    if user_id is None or habit_name is None:
         return None
-    habit = supabase.table("habits").select("habit_id").eq("username", username).eq("name", habit_name).execute()
+    habit = supabase.table("habits").select("habit_id").eq("user_id", user_id).eq("name", habit_name).execute()
     habit_df = pd.DataFrame(habit.data)
     if not habit_df.empty:
         return habit_df['habit_id'].values[0]
@@ -73,14 +73,14 @@ def get_habit_id(username, habit_name):
         return None
     
 # insert activity log
-def insert_activity_log(username, habit_id, log_date, activity, rating, log_notes):
+def insert_activity_log(user_id, habit_id, log_date, activity, rating, log_notes):
     """Insert activity log into the database."""
     # get supabase client
     supabase = st.session_state.supabase
-    if username is None or habit_id is None:
+    if user_id is None or habit_id is None:
         return False
     data = {
-        "username": username,
+        "user_id": user_id,
         "habit_id": habit_id,
         "log_date": log_date.isoformat(),
         "activity": activity,
@@ -94,14 +94,14 @@ def insert_activity_log(username, habit_id, log_date, activity, rating, log_note
         return False
     
 # insert habit
-def insert_habit(username, name, start_date, frequency, tracking_type, goal, goal_units, category, notes, end_date=None):
+def insert_habit(user_id, name, start_date, frequency, tracking_type, goal, goal_units, category, notes, end_date=None):
     """Insert habit into the database."""
     # get supabase client
     supabase = st.session_state.supabase
-    if username is None:
+    if user_id is None:
         return False
     data = {
-        "username": username,
+        "user_id": user_id,
         "name": name,
         "start_date": start_date,
         "frequency": frequency,

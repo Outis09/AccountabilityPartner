@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-import os
 from streamlit_authenticator.utilities import (CredentialsError,
                                                ForgotError,
                                                Hasher,
@@ -15,7 +14,6 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                RegisterError,
                                                ResetError,
                                                UpdateError)
-from supabase import create_client, Client
 
 # Set page configuration
 st.set_page_config(page_title="Accountability Partner",
