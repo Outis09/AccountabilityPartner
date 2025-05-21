@@ -205,7 +205,7 @@ def load_nltk_resources():
     resources = [
         ('sentiment/vader_lexicon.zip', 'vader_lexicon'),
         ('corpora/stopwords', 'stopwords'),
-        ('corpora/wordnet', 'wordnet')
+        ('corpora/wordnet', 'wordnet', 'punkt')
     ]
 
     for resource_path, download_name in resources:
