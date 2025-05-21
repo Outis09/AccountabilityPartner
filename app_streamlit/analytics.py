@@ -58,6 +58,28 @@ def calculate_streaks(dates, freq):
     current_streak = current if is_still_active else 0
     return max_streak, current_streak
 
+def calculate_streaks_grouped(df):
+    """
+    Calculate the longest and current streak across multiple habits with different frequencies.
+    Expects a DataFrame with 'habit_id', 'log_date', and 'frequency' columns.
+    """
+    overall_max_streak = 0
+    overall_current_streak = 0
+
+    # Group by habit
+    grouped = df.groupby('habit_id')
+    
+    for habit_id, group in grouped:
+        dates = sorted(pd.to_datetime(group['log_date']).dt.normalize())
+        freq = group['frequency'].iloc[0]
+        max_streak, current_streak = calculate_streaks(dates, freq)
+
+        overall_max_streak = max(overall_max_streak, max_streak)
+        overall_current_streak = max(overall_current_streak, current_streak)
+
+    return overall_max_streak, overall_current_streak
+
+
 def calculate_expected_logs(date, frequency):
     today = pd.to_datetime("today").normalize()
     date = pd.to_datetime(date)
@@ -265,29 +287,22 @@ def show_visuals(df):
         col1, col2 = st.columns(2)
 
         with col1:
-            with st.container(height=400):
-                # average rating per habit visual
-                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
-                st.subheader("Average rating by activity")
-                chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
-                st.altair_chart(chart, use_container_width=True)
-                # st.checkbox("Show values on chart", value=True)
-
-            with st.container(height=400):
-                # wordcloud visual
-                st.subheader("Highlights from your activity logs")
-                # create wordcloud
-                create_wordcloud(df, 'log_notes')
-                # sentiment analysis
-                df['processed_text'] = df['log_notes'].apply(text_preprocessor)
-                df['sentiment'] = df['processed_text'].apply(sentiment_analyzer)
-                st.write('Sentiment Analysis')
-                overview_sentiments = get_sentiment_results(df, 'sentiment')
-                st.dataframe(overview_sentiments, hide_index=True)
-
-        with col2:
+            # columns for KPI metrics
+            kpi1,kpi2,kpi3 = st.columns(3)
+            with kpi1:
+                # with st.container(height=100):
+                    # total habits
+                    st.metric(label="Total Habits", value=df['habit_id'].nunique(), border=True)
+            with kpi2:
+                # with st.container(height=100):
+                # total logs
+                st.metric(label="Total Logs", value=df['log_id'].nunique(), border=True)
+            with kpi3:
+                # average rating
+                st.metric(label="Average Rating", value=round(df['rating'].mean(),2), delta_color="normal", border=True)
+                
             # completion rate visual
-            with st.container(height=400):
+            with st.container(height=500):
                 st.subheader("Completion Rate")
                 today = pd.to_datetime(datetime.now().date())
                 consistency_list = []
@@ -313,7 +328,58 @@ def show_visuals(df):
                 # dispay dataframe as table
                 st.dataframe(consistency_df, hide_index=True)
 
-            with st.container(height=400):
+            with st.container(height=500):
+                # average rating per habit visual
+                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
+                st.subheader("Average rating by activity")
+                chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
+                st.altair_chart(chart, use_container_width=True)
+                # st.checkbox("Show values on chart", value=True)
+
+
+
+        with col2:
+            # columns for KPI metrics
+            kpi4,kpi5, kpi6 = st.columns(3)
+            with kpi4:
+                    # best habit
+                best_habit = df.groupby('name')['rating'].mean().idxmax()
+                st.metric(label="Best Habit (By rating)", value=best_habit, delta_color="normal", border=True)
+
+                    # st.metric(label="Total Categories", value=df['category'].nunique(), border=True)
+            with kpi5:
+                # longest streak
+                longest_streak, current_streak = calculate_streaks_grouped(df)
+                st.metric(label="Longest Streak", value=longest_streak, delta_color="normal", border=True)
+            with kpi6:
+                # average completion rate
+                unique_habits = df[['habit_id', 'frequency', 'start_date']].drop_duplicates()
+                total_expected_logs = 0
+                total_actual_logs = 0
+                for index,row in unique_habits.iterrows():
+                    habit_id = row['habit_id']
+                    frequency = row['frequency']
+                    start_date = pd.to_datetime(row['start_date'])
+                    # actual logs
+                    actual_logs = df[df['habit_id'] == habit_id].shape[0]
+                    # calculate expected logs based on habit frequency
+                    expected_logs = calculate_expected_logs(start_date, frequency)
+                    total_expected_logs += expected_logs
+                    total_actual_logs += actual_logs
+                if total_expected_logs > 0:
+                    average_completion_rate = round((total_actual_logs/total_expected_logs) * 100,2)
+                else:
+                    average_completion_rate = 0
+                # with st.container(height=100):
+                #     st.write("Average Completion Rate")
+                #     if average_completion_rate < 80:
+                #         st.markdown(f"<h4 style='color:red;'>{average_completion_rate:.2f}%</h4>", unsafe_allow_html=True)
+                #     else:
+                #         st.markdown(f"<h4 style='color:green;'>{average_completion_rate:.2f}%</h4>", unsafe_allow_html=True)
+                st.metric(label="Average Completion Rate", value=f"{average_completion_rate}%", delta_color="normal", border=True)
+
+
+            with st.container(height=500):
                 # goal achievement visual
                 st.subheader("Goal Achievement")
                 # filter for only tracking types that allow for goal tracking
@@ -333,8 +399,28 @@ def show_visuals(df):
                     chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
                     st.altair_chart(chart, use_container_width=True)
 
-
-
+            with st.container(height=500):
+                # give users option to select wordcloud visual or sentiment analysis
+                # st.subheader("Highlights and Sentiment Analysis from your activity logs")
+                # st.write("Select the visual you want to see")
+                st.subheader("Highlights and Sentiment Analysis from your activity logs")
+                tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
+                with tab1:
+                    # wordcloud visual
+                    # st.subheader("Highlights from your activity logs")
+                    # create wordcloud
+                    create_wordcloud(df, 'log_notes')
+                with tab2:
+                    # sentiment analysis
+                    df['processed_text'] = df['log_notes'].apply(text_preprocessor)
+                    df['sentiment'] = df['processed_text'].apply(sentiment_analyzer)
+                    # st.subheader('Sentiment Analysis')
+                    overview_sentiments = get_sentiment_results(df, 'sentiment')
+                    fig,ax = plt.subplots(figsize=(4,3))
+                    ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)
+                    ax.axis('equal')
+                    st.pyplot(fig)
+                    # st.dataframe(overview_sentiments, hide_index=True)
 
         # log calendar visual
         st.subheader("Log Calendar")
