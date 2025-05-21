@@ -202,11 +202,15 @@ def text_preprocessor(text):
 # initialize the VADER sentiment analyzer
 @st.cache_resource
 def load_nltk_resources():
+
+    try:
+        nltk.download('punkt_tab', quiet=True)
+    except:
+        nltk.download('punkt', quiet=True)
     resources = [
         ('sentiment/vader_lexicon.zip', 'vader_lexicon'),
         ('corpora/stopwords', 'stopwords'),
-        ('corpora/wordnet', 'wordnet'),
-        ('tokenizers/punkt', 'punkt')
+        ('corpora/wordnet', 'wordnet')
     ]
 
     for resource_path, download_name in resources:
