@@ -79,6 +79,25 @@ def calculate_streaks_grouped(df):
 
     return overall_max_streak, overall_current_streak
 
+def average_log_interval(log_dates):
+    """Calculates the average interval between logs"""
+    if len(log_dates) < 2:
+        return 0
+    log_dates = sorted(pd.to_datetime(log_dates))
+    intervals = [(log_dates[i] - log_dates[i-1]).days for i in range(1, len(log_dates))]
+    return sum(intervals) / len(intervals)
+
+def calculate_log_intervals_overtime(log_dates):
+    """Calculates the intervals between logs over time"""
+    log_dates = sorted(pd.to_datetime(log_dates))
+    intervals = []
+    for i in range(1, len(log_dates)):
+        gap = (log_dates[i] - log_dates[i-1]).days
+        intervals.append({
+            'log_date': log_dates[i],
+            'interval': gap
+        })
+    return pd.DataFrame(intervals)
 
 def calculate_expected_logs(date, frequency):
     today = pd.to_datetime("today").normalize()
@@ -94,18 +113,32 @@ def calculate_expected_logs(date, frequency):
         expected_logs = max(((today.year - date.year) * 12 + (today.month - date.month)) + 1, 1)
     return expected_logs
 
-def plot_bar_chart(df, group_col, value_col, x_title, y_title):
+def plot_bar_chart(df, group_col, value_col, x_title, y_title, orientation='horizontal'):
     """Plots bar chart with altair"""
-    chart = alt.Chart(df).mark_bar().encode(
-        x=alt.X(f'{value_col}:Q', title=x_title),
-        y=alt.Y(f'{group_col}:N', sort='-x', title=y_title),
-        tooltip=[
-            alt.Tooltip(f'{group_col}:N',title=x_title),
-            alt.Tooltip(f'{value_col}:Q', title=y_title)]
-    ).properties(
-        width=600,
-        height = 400
-    )
+    if orientation == 'vertical':
+        # vertical bar chart
+        chart = alt.Chart(df).mark_bar().encode(
+            x=alt.X(f'{group_col}:N', sort=None, title=x_title, axis=alt.Axis(labelAngle=0)),
+            y=alt.Y(f'{value_col}:Q', title=y_title),
+            tooltip=[
+                alt.Tooltip(f'{group_col}:N',title=x_title),
+                alt.Tooltip(f'{value_col}:Q', title=y_title)]
+        ).properties(
+            width=600,
+            height = 400
+        )
+    else:
+        # horizontal bar chart
+        chart = alt.Chart(df).mark_bar().encode(
+            x=alt.X(f'{value_col}:Q', title=x_title),
+            y=alt.Y(f'{group_col}:N', sort='-x', title=y_title),
+            tooltip=[
+                alt.Tooltip(f'{group_col}:N',title=x_title),
+                alt.Tooltip(f'{value_col}:Q', title=y_title)]
+        ).properties(
+            width=600,
+            height = 400
+        )
     return chart
 
 def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None, y_min=None, y_max=None, y_tick_count=None):
@@ -336,7 +369,7 @@ def show_visuals(df):
             with st.container(height=500):
                 # average rating per habit visual
                 habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
-                st.subheader("Average rating by activity")
+                st.subheader("Average Rating by Activity")
                 chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
                 st.altair_chart(chart, use_container_width=True)
                 # st.checkbox("Show values on chart", value=True)
@@ -408,7 +441,7 @@ def show_visuals(df):
                 # give users option to select wordcloud visual or sentiment analysis
                 # st.subheader("Highlights and Sentiment Analysis from your activity logs")
                 # st.write("Select the visual you want to see")
-                st.subheader("Highlights and Sentiment Analysis from your activity logs")
+                st.subheader("Insights from Activity Logs")
                 tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
                 with tab1:
                     # wordcloud visual
@@ -446,7 +479,25 @@ def show_visuals(df):
         ana1, ana2 = st.columns(2)
 
         with ana1:
-            with st.container(height=400):
+            # columns for KPI metrics
+            kpi1,kpi2, kpi3 = st.columns(3)
+            with kpi1:
+                st.metric(label="Total Logs", value=df['log_id'].nunique(), border=True)
+            with kpi2:
+                # completion rate
+                # calculate expected logs based on habit frequency
+                frequency = df['frequency'].unique()[0]
+                start_date = pd.to_datetime(df['start_date'].unique()[0])
+                actual_logs = df.shape[0]
+                expected_logs = calculate_expected_logs(start_date, frequency)
+                completion_rate = round((actual_logs/expected_logs) * 100,2)
+                st.metric(label="Completion Rate", value=f"{completion_rate}%", delta_color="normal", border=True)
+            with kpi3:
+                # average rating
+                avg_rating = df['rating'].mean()
+                st.metric(label="Average Rating", value=round(avg_rating,2), delta_color="normal", border=True)
+                # 
+            with st.container(height=500):
                 # create summary table
                 st.subheader("Summary")
                 habit = df.iloc[0]
@@ -460,7 +511,7 @@ def show_visuals(df):
                 if tracking == "Yes/No (Completed or not)":
                     df['goal_achievement'] = np.nan
                 else:
-                    df['goal_achievement'] = ((df['activity'].astype(float) / goal.astype(float)) * 100).clip(upper=100)
+                    df['goal_achievement'] = ((df['activity'].astype(float) / float(goal)) * 100).clip(upper=100)
                 # average goal achievement
                 avg_goal = df['goal_achievement'].mean()
                 # average rating
@@ -482,6 +533,9 @@ def show_visuals(df):
                 # streaks
                 dates = df['log_date'].to_list()
                 longest_streak, current_streak = calculate_streaks(dates, frequency)
+                # average log interval
+                avg_interval = average_log_interval(dates)
+                # create summary data
                 summary_data = {
                     'Target': target,
                     'Expected Logs': expected_logs,
@@ -491,13 +545,15 @@ def show_visuals(df):
                     'First Log Date': first_log.date(),
                     'Last Log Date': last_log.date(),
                     'Longest Streak': longest_streak,
-                    'Current Streak': current_streak
+                    'Current Streak': current_streak,
+                    'Average Log Interval': f"{avg_interval:.2f} days"
+
                 }
                 # convert to dataframe
                 summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
                 st.dataframe(summary_df, hide_index=True)
 
-            with st.container(height=400):
+            with st.container(height=500):
                 # line chart for activity logs against target
                 st.subheader('Log vs Target')
                 if tracking != "Yes/No (Completed or not)":
@@ -507,22 +563,88 @@ def show_visuals(df):
                 else:
                     st.info("This visual is not available for this activity")
 
+            with st.container(height=500):
+                # day of week visual
+                df['day_of_week'] = df['log_date'].dt.day_name()
+                order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=order, ordered=True)
+                day_counts = df['day_of_week'].value_counts().sort_index().reset_index()
+                st.subheader("Activity Logs by Day of Week")
+                # st.dataframe(day_counts, hide_index=True)
+                chart = plot_bar_chart(day_counts, 'day_of_week', 'count', 'Number of Logs', 'Day of Week', orientation='vertical')
+                st.altair_chart(chart, use_container_width=True)
+
+
 
         with ana2:
-            with st.container(height=400):
+            # columns for KPI metrics
+            kpi4,kpi5, kpi6 = st.columns(3)
+            with kpi4:
+                # current streak
+                _ , current_streak = calculate_streaks_grouped(df)
+                st.metric(label="Current Streak", value=current_streak, delta_color="normal", border=True)
+                # st.metric(label="N/A", value="N/A", border=True)
+            with kpi5:
+                # context aware kpi for duration, count, or yes/no
+                if tracking == "Yes/No (Completed or not)":
+                    # yes/no tracking
+                    completed = df[df['activity'] == "Yes"].shape[0]
+                    # st.write(completed)
+                    # not_completed = df.shape[0] - completed
+                    st.metric(label="Completed", value=completed, delta_color="normal", border=True)
+                elif tracking == "Duration (Minutes/hours)":
+                    # duration tracking
+                    total_duration = df['activity'].sum()
+                    if total_duration > 60:
+                        hours = round(total_duration / 60,2)
+                        st.metric(label="Total Duration", value=f"{hours} hours", delta_color="normal", border=True)
+                    else:
+                        st.metric(label="Total Duration", value=f"{total_duration} minutes", delta_color="normal", border=True)
+                elif tracking == "Count (Number-based)":
+                    # count tracking
+                    total_count = df['activity'].sum()
+                    goal_units = df['goal_units'].unique()[0]
+                    st.metric(label=goal_units, value=total_count, delta_color="normal", border=True)
+            with kpi6:
+                # goal achievement rate
+                tracking = df['tracking_type'].unique()[0]
+                goal = df['goal'].unique()[0]
+                if tracking != "Yes/No (Completed or not)":
+                    df['goal_achievement'] = ((df['activity'].astype(float) / float(goal)) * 100).clip(upper=100)
+                    goal_achievement = f"{round(df['goal_achievement'].mean(),2)}%"
+                else:
+                    goal_achievement = 'N/A'
+                st.metric(label="Goal Achievement Rate", value=goal_achievement, delta_color="normal", border=True)
+
+            with st.container(height=500):
                 st.subheader("Rating Trends")
                 chart = plot_line_chart(df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
                 st.altair_chart(chart, use_container_width=True)
 
-            with st.container(height=400):
-                st.subheader("Highlights and Sentiment Analysis from your activity logs")
-                create_wordcloud(df, 'log_notes')
-                # sentiment analysis
-                df['processed_text'] = df['log_notes'].apply(text_preprocessor)
-                df['sentiment'] = df['processed_text'].apply(sentiment_analyzer)
-                st.write('Sentiment Analysis')
-                sentiment_df = get_sentiment_results(df, 'sentiment')
-                st.dataframe(sentiment_df, hide_index=True)
+            with st.container(height=500):
+                st.subheader("Insights from Activity Logs")
+                tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
+                with tab1:
+                    create_wordcloud(df, 'log_notes')
+                with tab2:
+                    # sentiment analysis
+                    df['processed_text'] = df['log_notes'].apply(text_preprocessor)
+                    df['sentiment'] = df['processed_text'].apply(sentiment_analyzer)
+                    # pie chart for sentiment analysis
+                    fig,ax = plt.subplots(figsize=(4,3))
+                    ax.pie(df['sentiment'].value_counts(), labels=df['sentiment'].value_counts().index, autopct='%1.1f%%', startangle=90)
+                    ax.axis('equal')
+                    st.pyplot(fig)
+                    # st.write('Sentiment Analysis')
+                    # sentiment_df = get_sentiment_results(df, 'sentiment')
+                    # st.dataframe(sentiment_df, hide_index=True)
+
+            # log intervals over time
+            with st.container(height=500):
+                st.subheader("Log Intervals Over Time")
+                log_intervals = calculate_log_intervals_overtime(df['log_date'])
+                chart = plot_line_chart(log_intervals, 'log_date', 'interval', 'Log Date', 'Interval (Days)', y_tick_count=5)
+                st.altair_chart(chart, use_container_width=True)
 
 
 
