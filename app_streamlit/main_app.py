@@ -17,6 +17,7 @@ st.set_page_config(page_title="Accountability Partner",
 from habit_wizard import create_habit_wizard
 from activity_wizard import create_activity_wizard
 import analytics as an
+from todo import show_unlogged_activities
 from utils import supabase_client as sp
 from app_streamlit import user_auth as auth
 
@@ -197,7 +198,7 @@ def show_main_app():
 
         # main radio selections
         main_view = st.radio("Select View",
-                     ["Create Habit", "Log Activity", "Analytics"],
+                     ["Create Habit", "Log Activity", "Analytics", "Unlogged Activities"],
                      key='view_radio',
                      on_change=update_active_view,
                      horizontal=True,
@@ -219,6 +220,11 @@ def show_main_app():
                 st.warning("No data available for analytics. Please log some activities.")
             else:
                 an.show_analytics(merged_df)
+        elif main_view == "Unlogged Activities":
+            if len(merged_df) == 0:
+                st.warning("No activities logged. Please log some activities.")
+            else:
+                show_unlogged_activities(st.session_state.user_id)
 
 
     else:
