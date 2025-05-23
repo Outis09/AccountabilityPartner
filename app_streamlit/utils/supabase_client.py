@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from supabase import create_client, Client
+from datetime import date, timedelta
 
 
 # initialize supabase client
@@ -117,3 +118,56 @@ def insert_habit(user_id, name, start_date, frequency, tracking_type, goal, goal
         return True
     else:
         return False
+    
+# get unlogged activities
+def get_unlogged_activities(user_id):
+    """Fetch activities that are due for the user."""
+    # get supabase client
+    supabase = st.session_state.supabase
+    if user_id is None:
+        return [], [], []
+    # today
+    today = date.today()
+    # convert to iso format
+    today_iso = today.isoformat()
+    # start of the week
+    start_of_week = today - timedelta(days=today.weekday())
+    # start of the month
+    start_of_month = today.replace(day=1)
+    # get all habits
+    habits = supabase.table("habits").select("*").eq("user_id", user_id).execute().data
+    # if no habits, return empty lists
+    if not habits:
+        return [], [], []
+    # get all activities for this month
+    recent_logs = supabase.table("activity_logs")\
+        .select("*")\
+        .eq("user_id", user_id)\
+        .gte("log_date", start_of_month)\
+        .execute()\
+        .data
+    # list to hold unlogged activities
+    daily_activities = []
+    weekly_activities = []
+    monthly_activities = []
+    # loop through habits
+    for habit in habits:
+        # get habit details
+        habit_id = habit['habit_id']
+        habit_name = habit['name']
+        habit_frequency = habit['frequency']
+        if habit_frequency == "Daily":
+            # check if activity is logged for today
+            if not any(log['habit_id'] == habit_id and log['log_date'] == today_iso for log in recent_logs):
+                daily_activities.append(habit_name)
+        elif habit_frequency == "Weekly":
+            # check if activity is logged for this week
+            if not any(log['habit_id'] == habit_id and log['log_date'] >= start_of_week.isoformat() for log in recent_logs):
+                weekly_activities.append(habit_name)
+        elif habit_frequency == "Monthly":
+            # check if activity is logged for this month
+            if not any(log['habit_id'] == habit_id and log['log_date'] >= start_of_month.isoformat() for log in recent_logs):
+                monthly_activities.append(habit_name)
+    # return activities
+    return daily_activities, weekly_activities, monthly_activities
+
