@@ -64,7 +64,8 @@ def step1_fill_form():
     """Creates the interface for creating new activities"""
     st.header("Step 1: Create New Habit")
 
-    habit = st.text_input("Habit Name (e.g., Read for 30 mins each day)")
+    habit = st.text_input("Habit Name", 
+                          placeholder="e.g., Read for 30 mins each day", max_chars=50)
     start_date = st.date_input("Start Date", min_value=date.today())
     frequency = st.radio("Frequency", ["Daily", "Weekly", "Monthly"])
 
@@ -78,7 +79,8 @@ def step1_fill_form():
         st.info("Goals with this type are automatically expected to be completed at least once per frequency.")
     elif tracking == "Count (Number-based)":
         goal = st.number_input("Number of times you want to do this", min_value=1, step=1)
-        goal_units = "times"
+        goal_units = st.text_input("Enter unit of measurement", placeholder="e.g., times, reps, sets")
+        # goal_units = "times"
     elif tracking == "Duration (Minutes/hours)":
         goal = st.number_input("Number of minutes you want to spend", min_value=1, step=5)
         goal_units = "minutes"
@@ -90,7 +92,9 @@ def step1_fill_form():
     if category == "Other":
         custom_category = st.text_input("Enter custom category")
 
-    notes = st.text_area("Why is this habit important?", height=100)
+    notes = st.text_area("Why is this habit important?", 
+                         height=100, 
+                         placeholder="e.g., To improve my health, to learn a new skill, etc.")
 
     end_date_status = st.radio("When do you want to end?", ["Indefinitely", "Specific Date"])
     end_date = None

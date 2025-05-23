@@ -51,7 +51,7 @@ def step1_select_habit():
         st.session_state.activity_data = {
             "category": selected_cat,
             "habit": selected_habit,
-            "habit_id": int(supabase.get_habit_id(username,selected_habit)),
+            "habit_id": int(supabase.get_habit_id(st.session_state.user_id,selected_habit)),
             "tracking_type": st.session_state.habit_details.get(selected_habit)
         }
         st.session_state.activity_step = 2
@@ -78,7 +78,7 @@ def step2_log_details():
 
     rating = int(st.number_input("Rate your productivity during this activity (1-5)", min_value=1, max_value=5, step=1))
 
-    comments = st.text_area("Any comments?", height=100)
+    comments = st.text_area("Any comments?", height=100, placeholder="e.g., I felt great, I struggled with this, etc.")
 
     if st.button("Next ➡️", key="step2_next"):
         if (data['tracking_type'] == "Yes/No (Completed or not)" and not tracking_input) or (data['tracking_type'] != "Yes/No (Completed or not)" and tracking_input == 0):
