@@ -654,11 +654,22 @@ def show_visuals(df):
         st.pyplot(fig, use_container_width=True)
 
     elif st.session_state.sub_option == "🗃️ Data":
-        df = df.copy()
+        data = df[['log_date','name','category','activity','goal','goal_units','tracking_type','rating','log_notes']]
+        data.rename(columns={
+            'log_date': 'Log Date',
+            'name': 'Activity',
+            'category': 'Category',
+            'activity': 'Activity (Yes/No/Count/Duration)',
+            'goal': 'Goal',
+            'goal_units': 'Goal Units',
+            'tracking_type': 'Tracking Type',
+            'rating': 'Rating',
+            'log_notes': 'Notes'
+        }, inplace=True)
         st.header("Your activity logs data")
         # tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
-        st.write(f"Showing {len(df)} records based on your filter selections.")
-        st.dataframe(df, hide_index=True)
+        st.write(f"Showing {len(data)} records based on your filter selections.")
+        st.dataframe(data, hide_index=True)
         # st.dataframe(habit_df)
 
 
