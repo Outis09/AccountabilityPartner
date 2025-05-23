@@ -19,11 +19,11 @@ user_id = st.session_state.get("user_id")
 
 def load_categories():
     """Load categories"""
-    return supabase.get_categories(user_id)
+    return supabase.get_categories(st.session_state.user_id)
 
 def load_habits(selected_category):
     """Load habits for selected category"""
-    return supabase.get_habits(user_id,selected_category)
+    return supabase.get_habits(st.session_state.user_id,selected_category)
 
 
 # select Category and Habit
@@ -32,9 +32,9 @@ def step1_select_habit():
     st.header("Step 1: Select Category and Habit")
 
     categories = load_categories()
+
     selected_cat = st.selectbox("Select a Category", categories)
-    # st.write("Selected Category:", categories)
-    # st.write(categories, user_id)
+
 
     habits = []
     if selected_cat:
