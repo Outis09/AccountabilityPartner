@@ -38,9 +38,9 @@ if 'authentication_status' not in st.session_state:
 if 'just_logged_in' not in st.session_state:
     st.session_state.just_logged_in = False
 if 'active_view' not in st.session_state:
-    st.session_state.active_view = "Create Habit"
+    st.session_state.active_view = "Analytics"
 if 'view_radio' not in st.session_state:
-    st.session_state.view_radio = "Create Habit"
+    st.session_state.view_radio = "Analytics"
 if 'sub_option' not in st.session_state:
     st.session_state.sub_option = "📊 Overview"
 if 'username' not in st.session_state:
@@ -179,52 +179,68 @@ def show_home():
 def show_main_app():
     """Display the main application dashboard after login."""
     
-    st.title("Accountability Partner Dashboard")
+    # st.title("Accountability Partner Dashboard")
 
     if st.session_state['authentication_status']:
+        with st.sidebar:
+            st.title("Accountability Partner")
+            st.write("Track your habits and activities with ease!")
+            st.logo("images/AppLogo.png", size="large")
         # st.session_state.username = st.session_state['username']
-        st.write(f"*{st.session_state.username}*, Welcome to your dashboard! Here you can log and track your habits and activities.")
-        st.info("Use the radio to navigate through different features.")
+        # st.write(f"*{st.session_state.username}*, Welcome to your dashboard! Here you can log and track your habits and activities.")
+        # st.info("Use the radio to navigate through different features.")
         # log out button
         # st.session_state.authenticator.logout()
-        if st.button("Logout"):
+
+
+
+        # main radio selections
+        main_view = st.sidebar.radio("Main Menu",
+                     ["Analytics","Unlogged Activities","Log Activity", "Create Habit" ],
+                     key='view_radio',
+                     on_change=update_active_view,
+                     horizontal=False)
+    
+        # get user data
+        habits_df, activities_df, merged_df = sp.get_data(st.session_state.user_id)
+
+
+        
+        if main_view == "Analytics" or st.session_state.just_logged_in:
+            if len(merged_df) == 0:
+                st.info("New user? Please create a habit and log some activities to unlock analytics.")
+                # st.info("No data available for analytics. Please log some activities.")
+            else:
+                st.title("📈 Analytics Dashboard")
+                if len(merged_df) < 10 or len(habits_df) < 5:
+                    st.warning("Not enough data for comprehensive analytics.")
+                    st.info("Please create more habits and log more activities.")
+                an.show_analytics(merged_df)
+            st.session_state.just_logged_in = False
+        elif main_view == "Log Activity":
+            if len(habits_df) == 0:
+                st.warning("No habits available. Please create a habit first.")
+            else:
+                st.title("📅 Log Activity")
+                create_activity_wizard()
+        elif main_view == "Create Habit":
+            st.title("📝 Create a New Habit")
+            create_habit_wizard()
+
+        elif main_view == "Unlogged Activities":
+            if len(merged_df) == 0:
+                st.warning("No activities logged. Please log some activities.")
+            else:
+                st.title("📋 Unlogged Activities")
+                show_unlogged_activities(st.session_state.user_id)
+
+        if st.sidebar.button("Logout"):
             st.session_state.current_page = "home"
             st.session_state.show_login = False
             st.session_state.show_signup = False
             st.session_state.forgot_password = False
             st.session_state.username=None
             st.rerun()
-
-
-        # main radio selections
-        main_view = st.radio("Select View",
-                     ["Create Habit", "Log Activity", "Analytics", "Unlogged Activities"],
-                     key='view_radio',
-                     on_change=update_active_view,
-                     horizontal=True,
-                     label_visibility='collapsed')
-    
-        # get user data
-        habits_df, activities_df, merged_df = sp.get_data(st.session_state.user_id)
-        
-        if main_view == "Create Habit" or st.session_state.just_logged_in:
-            st.session_state.just_logged_in = False
-            create_habit_wizard()
-        elif main_view == "Log Activity":
-            if len(habits_df) == 0:
-                st.warning("No habits available. Please create a habit first.")
-            else:
-                create_activity_wizard()
-        elif main_view == "Analytics":
-            if len(merged_df) == 0:
-                st.warning("No data available for analytics. Please log some activities.")
-            else:
-                an.show_analytics(merged_df)
-        elif main_view == "Unlogged Activities":
-            if len(merged_df) == 0:
-                st.warning("No activities logged. Please log some activities.")
-            else:
-                show_unlogged_activities(st.session_state.user_id)
 
 
     else:

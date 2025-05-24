@@ -319,7 +319,7 @@ def show_sidebar(merged_df):
 
 def show_visuals(df):
     if st.session_state.sub_option == "📊 Overview":
-        st.header("📈 Visualize your progress")
+        # st.header("📈 Visualize your progress")
 
         # create 2 columns for charts
         col1, col2 = st.columns(2)
