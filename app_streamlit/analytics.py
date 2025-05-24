@@ -314,8 +314,29 @@ def show_sidebar(merged_df):
             analytics_df = analytics_df01[analytics_df01['name'] == analytics_selected_habit]
             return analytics_df
         elif st.session_state.sub_option == "🗃️ Data":
-            st.write("Filters for option 3")
-            return merged_df
+            # data filters for data page
+            data_categories = merged_df['category'].unique()
+            data_categories_with_all = ['All categories'] + sorted(data_categories)
+            selected_data_category = st.selectbox("Select category", options=data_categories_with_all)
+            if selected_data_category == 'All categories':
+                data_df = merged_df.copy()
+            else:
+                data_df = merged_df[merged_df['category'] == selected_data_category]
+            # habit filters
+            data_habits = data_df['name'].unique()
+            data_habits_with_all = ['All habits'] + sorted(data_habits)
+            selected_data_habit = st.selectbox("Select habit", options=data_habits_with_all)
+            if selected_data_habit == 'All habits':
+                data_df = data_df.copy()
+            else:
+                data_df = data_df[data_df['name'] == selected_data_habit]
+            # date filters
+            data_start_date = st.date_input("Start date", data_df['log_date'].min().date())
+            data_end_date = st.date_input("End date", data_df['log_date'].max().date())
+            data_start_date = pd.to_datetime(data_start_date)
+            data_end_date = pd.to_datetime(data_end_date)
+            data_df = data_df[(data_df['log_date'] >= data_start_date) & (data_df['log_date'] <= data_end_date)]
+            return data_df
 
 def show_visuals(df):
     if st.session_state.sub_option == "📊 Overview":
