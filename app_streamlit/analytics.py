@@ -362,7 +362,7 @@ def show_visuals(df):
                 
             # completion rate visual
             with st.container(height=500):
-                st.subheader("Completion Rate")
+                st.subheader("✅ Completion Rate")
                 today = pd.to_datetime(datetime.now().date())
                 consistency_list = []
                 unique_habits = df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
@@ -390,7 +390,7 @@ def show_visuals(df):
             with st.container(height=500):
                 # average rating per habit visual
                 habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
-                st.subheader("Average Rating by Activity")
+                st.subheader("⭐ Average Rating by Activity")
                 chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
                 st.altair_chart(chart, use_container_width=True)
                 # st.checkbox("Show values on chart", value=True)
@@ -440,7 +440,7 @@ def show_visuals(df):
 
             with st.container(height=500):
                 # goal achievement visual
-                st.subheader("Goal Achievement")
+                st.subheader("🎯 Goal Achievement")
                 # filter for only tracking types that allow for goal tracking
                 goal_df = df[df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
                 if goal_df.shape[0] == 0:
@@ -462,7 +462,7 @@ def show_visuals(df):
                 # give users option to select wordcloud visual or sentiment analysis
                 # st.subheader("Highlights and Sentiment Analysis from your activity logs")
                 # st.write("Select the visual you want to see")
-                st.subheader("Insights from Activity Logs")
+                st.subheader("💡 Insights from Activity Logs")
                 tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
                 with tab1:
                     # wordcloud visual
@@ -482,7 +482,7 @@ def show_visuals(df):
                     # st.dataframe(overview_sentiments, hide_index=True)
 
         # log calendar visual
-        st.subheader("Log Calendar")
+        st.subheader("📅 Log Calendar")
         # github_cmap = mcolors.ListedColormap([
         # "#ebedf0",  # 0 contributions
         # "#c6e48b",  # 1-9 contributions
@@ -493,7 +493,6 @@ def show_visuals(df):
         fig,ax = plot_calplot(df, 'log_date')
         st.pyplot(fig, use_container_width=True)
     elif st.session_state.sub_option == "📈 Activity Analytics":
-        st.header("Detailed Habit Analysis")
         habit_name  = df['name'].unique()[0]
         st.metric(label='Activity', value=habit_name)
         # create 2 columns for visuals
@@ -520,7 +519,7 @@ def show_visuals(df):
                 # 
             with st.container(height=500):
                 # create summary table
-                st.subheader("Summary")
+                st.subheader("📋 Summary")
                 habit = df.iloc[0]
                 name = habit['name']
                 goal = habit['goal']
@@ -576,7 +575,8 @@ def show_visuals(df):
 
             with st.container(height=500):
                 # line chart for activity logs against target
-                st.subheader('Log vs Target')
+                # add emoji
+                st.subheader('🎯 Log vs Target')
                 if tracking != "Yes/No (Completed or not)":
                     goal = int(goal)
                     chart = plot_line_chart(df, 'log_date', 'activity', 'Log Date', goal_units,'goal', y_min=0, y_max=goal+10, y_tick_count=5)
@@ -590,7 +590,7 @@ def show_visuals(df):
                 order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                 df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=order, ordered=True)
                 day_counts = df['day_of_week'].value_counts().sort_index().reset_index()
-                st.subheader("Activity Logs by Day of Week")
+                st.subheader("🗓️ Activity Logs by Day of Week")
                 # st.dataframe(day_counts, hide_index=True)
                 chart = plot_bar_chart(day_counts, 'day_of_week', 'count', 'Number of Logs', 'Day of Week', orientation='vertical')
                 st.altair_chart(chart, use_container_width=True)
@@ -638,12 +638,12 @@ def show_visuals(df):
                 st.metric(label="Goal Achievement Rate", value=goal_achievement, delta_color="normal", border=True)
 
             with st.container(height=500):
-                st.subheader("Rating Trends")
+                st.subheader("📈 Rating Trends")
                 chart = plot_line_chart(df,'log_date','rating', 'Log Date', 'Rating', y_tick_count=5)
                 st.altair_chart(chart, use_container_width=True)
 
             with st.container(height=500):
-                st.subheader("Insights from Activity Logs")
+                st.subheader("💡 Insights from Activity Logs")
                 tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
                 with tab1:
                     create_wordcloud(df, 'log_notes')
@@ -662,7 +662,7 @@ def show_visuals(df):
 
             # log intervals over time
             with st.container(height=500):
-                st.subheader("Log Intervals Over Time")
+                st.subheader("⌚ Log Intervals Over Time")
                 log_intervals = calculate_log_intervals_overtime(df['log_date'])
                 chart = plot_line_chart(log_intervals, 'log_date', 'interval', 'Log Date', 'Interval (Days)', y_tick_count=5)
                 st.altair_chart(chart, use_container_width=True)
@@ -670,7 +670,7 @@ def show_visuals(df):
 
 
         # log calendar visual
-        st.subheader("Log Calendar")
+        st.subheader(" 📅 Log Calendar")
         fig,ax = plot_calplot(df, 'log_date', cmap='YlGn_r')
         st.pyplot(fig, use_container_width=True)
 
