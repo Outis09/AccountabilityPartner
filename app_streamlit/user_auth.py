@@ -6,6 +6,12 @@ import uuid
 import re
 from datetime import datetime
 import streamlit as st
+import requests
+import smtplib
+from email.mime.text import MIMEText
+# from email.mime.multipart import MIMEMultipart
+# from sendgrid import SendGridAPIClient
+# from sendgrid.helpers.mail import Mail
 
 def hash_password(password,salt=None):
     """Hashes a password with a salt using SHA-256."""
@@ -108,3 +114,150 @@ def login_user(username, password):
         return False,None, "Invalid username or password."
     
     return True, user_data, None
+
+
+def generate_temporary_password():
+    """Generates a temporary password."""
+    # generate a random password
+    temp_password = secrets.token_urlsafe(12)
+    # hash the temporary password
+    hashed_temp_password, salt = hash_password(temp_password)
+    return hashed_temp_password, salt
+
+def forgot_password(email):
+    """Handles forgot password functionality."""
+    # supabase client
+    supabase = st.session_state.supabase
+    # validate email
+    if not is_valid_email(email):
+        return False, "Invalid email format."
+    # check if email exists
+    user_response = supabase.table("users").select("*").eq("email", email).execute()
+    if not user_response.data:
+        return False, "Email not registered."
+    
+    # generate temporary password
+    temp_password, salt = generate_temporary_password()
+    
+    # update user with temporary password
+    user_data = {
+        "password_hash": temp_password,
+        "salt": salt
+    }
+    
+    try:
+        supabase.table("users").update(user_data).eq("email", email).execute()
+        return True, temp_password
+    except Exception as e:
+        support_url = "https://linkedin.com/in/samuel-ayer"
+        return False, f"An error occurred: {str(e)}. Please contact support at {support_url}"
+    
+def send_temporary_password_email(email, temp_password):
+    """Sends the temporary password to the user's email."""
+    # load sendgrid API key from secrets
+    sender_email = st.secrets['email']['sender']
+    sender_password = st.secrets['email']['password']
+
+    subject = "Your Temporary Password"
+    body = f"""
+Hello,
+    
+Your temporary password is: {temp_password}
+Please use this password to log in and change your password immediately.
+Thank you for using our service!
+
+Regards,
+Accountability Partner Team
+"""
+    message = MIMEText(body)
+    message['From'] = sender_email
+    message['To'] = email
+    message['Subject'] = subject
+    # message.attach(MIMEText(body, 'plain'))
+    
+    try:
+        with smtplib.SMTP("smtp.gmaail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email, message.as_string())
+        return True, f"Temporary password sent to {email}. Please check your inbox or spam."
+    except Exception as e:
+        return False, f"Failed to send email: {str(e)}. Please contact support if the problem persists."
+    
+
+def forgot_username(email):
+    """Handles forgot username functionality."""
+    # supabase client
+    supabase = st.session_state.supabase
+    # validate email
+    if not is_valid_email(email):
+        return False, "Invalid email format."
+    # check if email exists
+    user_response = supabase.table("users").select("*").eq("email", email).execute()
+    if not user_response.data:
+        return False, "Email not registered."
+    
+    # get username
+    username = user_response.data[0]['username']
+    
+    return True, username
+
+def send_username_email(email, username):
+    """Sends the username to the user's email."""
+#     # get resend email credentials
+#     api_key = st.secrets['API_KEY']
+#     sender = st.secrets['RESEND_SENDER']
+#     # email message
+#     data = {
+#         "from": f"Accountability Partner <accountabilitypartner@resend.dev>",
+#         "to": "chiefacctpartner@gmail.com",
+#         "subject": "Your Username",
+#         "html": f"""
+# <p>Hello</p>
+# <p>Your username is: <strong>{username}</strong></p>
+# <p>Please use this username to log in to your account.</p>
+# <p>Regards,<br>Accountability Partner Team</p>
+# """
+#     }
+#     try:
+#         response = requests.post(
+#             "https://api.resend.com/emails",
+#             headers={"Authorization": f"Bearer {api_key}",
+#                      "Content-Type": "application/json"},
+#             json=data
+#         )
+#         if response.status_code == 200:
+#             return True, f"Username sent to {email}. Please check your inbox or spam."
+#         else:
+#             return False, f"Failed to send email: {response.text}. Please contact support if the problem persists."
+#     except Exception as e:
+#         return False, f"An error occurred: {str(e)}. Please contact support if the problem persists."
+
+    # load sendgrid API key from secrets
+    sender_email = st.secrets['smtp_sender']
+    sender_password = st.secrets['smtp_password']
+
+    subject = "Your Username"
+    body = f"""
+Hello,
+
+Your username is: {username}
+Please use this username to log in to your account.
+
+Regards,
+Accountability Partner Team
+"""
+    message = MIMEText(body)
+    message['From'] = sender_email
+    message['To'] = email
+    message['Subject'] = subject
+    # message.attach(MIMEText(body, 'plain'))
+    
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email, message.as_string())
+        return True, f"Username sent to {email}. Please check your inbox or spam."
+    except Exception as e:
+        return False, f"Failed to send email: {str(e)}. Please contact support if the problem persists."
