@@ -10,5 +10,6 @@ PyYAML
 streamlit-authenticator
 supabase
 python-dotenv
-smltplib
+smptlib
 requests
+email
