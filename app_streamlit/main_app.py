@@ -58,7 +58,34 @@ supabase = sp.init_supabase()
 def update_active_view():
     st.session_state.active_view = st.session_state.view_radio
 
+# dialog for forgot password
+@st.dialog("Forgot Password")
+def forgot_password_dialog():
+    st.write("Please enter your email address to receive a temporary password.")
+    email = st.text_input("Email", key="forgot_password_email")
+    if st.button("Send Temporary Password"):
+        success, message = auth.forgot_password(email)
+        if not success:
+            st.error(message)
+            return
+        if success:
+            url = "https://www.linkedin.com/in/samuel-ayer/"
+            st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
+        
 
+# dialog for forgot username
+@st.dialog("Forgot Username")
+def forgot_username_dialog():
+    st.write("Please enter your email address to retrieve your username.")
+    email = st.text_input("Email", key="forgot_username_email")
+    if st.button("Retrieve Username"):
+        success, message = auth.forgot_username(email)
+        if not success:
+            st.error(message)
+            return
+        if success:
+            url = "https://www.linkedin.com/in/samuel-ayer/"
+            st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
 
 def show_home():
     """Display the home page with login, signup, and demo options."""
@@ -73,7 +100,7 @@ def show_home():
         st.image("images/AppLogo.png", use_container_width=True)
 
         # create 4 columns for login, signup, demo and forgot password
-        login_col, signup_col, demo_col, forgot_password_col = st.columns([1, 1, 1, 1])
+        login_col, signup_col, demo_col = st.columns([1, 1, 1])
         with login_col:
             if st.button("Login", use_container_width=True):
                 st.session_state.show_login = True
@@ -96,12 +123,6 @@ def show_home():
                 st.session_state.forgot_password = False
                 st.rerun()
         
-        with forgot_password_col:
-            if st.button("Forgot Password", use_container_width=True):
-                st.session_state.forgot_password = True
-                st.session_state.show_login = False
-                st.session_state.show_signup = False
-                st.rerun()
 
         # show login form if login button was clicked
         if st.session_state.show_login:
@@ -128,6 +149,14 @@ def show_home():
                         st.rerun()
                     else:
                         st.error(error)
+                # columns for forgot username and password
+                forgot1, forgot2 = st.columns([1,1])
+                with forgot1:
+                    if st.button("Forgot Username"):
+                        forgot_username_dialog()
+                with forgot2:
+                    if st.button("Forgot Password"):
+                        forgot_password_dialog()
 
 
         # show signup form if signup button was clicked
