@@ -341,11 +341,9 @@ def show_sidebar(merged_df):
 def show_visuals(df):
     if st.session_state.sub_option == "📊 Overview":
         # st.header("📈 Visualize your progress")
-
-        # create 2 columns for charts
-        col1, col2 = st.columns(2)
-
-        with col1:
+        # 2 kpi column divisions
+        kpi_section1, kpi_section2 = st.columns(2)
+        with kpi_section1:
             # columns for KPI metrics
             kpi1,kpi2,kpi3 = st.columns(3)
             with kpi1:
@@ -359,45 +357,8 @@ def show_visuals(df):
             with kpi3:
                 # average rating
                 st.metric(label="Average Rating", value=round(df['rating'].mean(),2), delta_color="normal", border=True)
-                
-            # completion rate visual
-            with st.container(height=500):
-                st.subheader("✅ Completion Rate")
-                today = pd.to_datetime(datetime.now().date())
-                consistency_list = []
-                unique_habits = df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
-                for index,row in unique_habits.iterrows():
-                    habit_id = row['habit_id']
-                    name = row['name']
-                    frequency = row['frequency']
-                    start_date = pd.to_datetime(row['start_date'])
-                    # actual logs
-                    actual_logs = df[df['habit_id'] == habit_id].shape[0]
-                    # calculate expected logs based on habit frequency
-                    expected_logs = calculate_expected_logs(start_date, frequency)
-                    consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
-                    consistency_list.append({
-                        "Habit": name,
-                        "Expected Logs": expected_logs,
-                        "Actual Logs":actual_logs,
-                        "Completion Rate(%)": float(consistency_rate)
-                    })
-                # convert completion rate list to dataframe
-                consistency_df = pd.DataFrame(consistency_list)
-                # dispay dataframe as table
-                st.dataframe(consistency_df, hide_index=True)
 
-            with st.container(height=500):
-                # average rating per habit visual
-                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
-                st.subheader("⭐ Average Rating by Activity")
-                chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
-                st.altair_chart(chart, use_container_width=True)
-                # st.checkbox("Show values on chart", value=True)
-
-
-
-        with col2:
+        with kpi_section2:
             # columns for KPI metrics
             kpi4,kpi5, kpi6 = st.columns(3)
             with kpi4:
@@ -437,7 +398,50 @@ def show_visuals(df):
                 #         st.markdown(f"<h4 style='color:green;'>{average_completion_rate:.2f}%</h4>", unsafe_allow_html=True)
                 st.metric(label="Average Completion Rate", value=f"{average_completion_rate}%", delta_color="normal", border=True)
 
+        # create 2 columns for charts
+        col1, col2 = st.columns(2)
 
+        with col1:
+
+                
+            # completion rate visual
+            with st.container(height=500):
+                st.subheader("✅ Completion Rate")
+                today = pd.to_datetime(datetime.now().date())
+                consistency_list = []
+                unique_habits = df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
+                for index,row in unique_habits.iterrows():
+                    habit_id = row['habit_id']
+                    name = row['name']
+                    frequency = row['frequency']
+                    start_date = pd.to_datetime(row['start_date'])
+                    # actual logs
+                    actual_logs = df[df['habit_id'] == habit_id].shape[0]
+                    # calculate expected logs based on habit frequency
+                    expected_logs = calculate_expected_logs(start_date, frequency)
+                    consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
+                    consistency_list.append({
+                        "Habit": name,
+                        "Expected Logs": expected_logs,
+                        "Actual Logs":actual_logs,
+                        "Completion Rate(%)": float(consistency_rate)
+                    })
+                # convert completion rate list to dataframe
+                consistency_df = pd.DataFrame(consistency_list)
+                # dispay dataframe as table
+                st.dataframe(consistency_df, hide_index=True)
+
+            with st.container(height=500):
+                # average rating per habit visual
+                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
+                st.subheader("⭐ Average Rating by Activity")
+                chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
+                st.altair_chart(chart, use_container_width=True)
+                # st.checkbox("Show values on chart", value=True)
+
+
+
+        with col2:
             with st.container(height=500):
                 # goal achievement visual
                 st.subheader("🎯 Goal Achievement")
@@ -494,11 +498,11 @@ def show_visuals(df):
         st.pyplot(fig, use_container_width=True)
     elif st.session_state.sub_option == "📈 Activity Analytics":
         habit_name  = df['name'].unique()[0]
+        # st.header(f"📈 Analytics for {habit_name}")
         st.metric(label='Activity', value=habit_name)
-        # create 2 columns for visuals
-        ana1, ana2 = st.columns(2)
-
-        with ana1:
+        # main kpi columns
+        main_kpi1, main_kpi2 = st.columns(2)
+        with main_kpi1:
             # columns for KPI metrics
             kpi1,kpi2, kpi3 = st.columns(3)
             with kpi1:
@@ -516,6 +520,53 @@ def show_visuals(df):
                 # average rating
                 avg_rating = df['rating'].mean()
                 st.metric(label="Average Rating", value=round(avg_rating,2), delta_color="normal", border=True)
+
+        with main_kpi2:
+            # columns for KPI metrics
+            kpi4,kpi5, kpi6 = st.columns(3)
+            with kpi4:
+                # current streak
+                _ , current_streak = calculate_streaks_grouped(df)
+                st.metric(label="Current Streak", value=current_streak, delta_color="normal", border=True)
+                # st.metric(label="N/A", value="N/A", border=True)
+            with kpi5:
+                tracking = df['tracking_type'].unique()[0]
+                # context aware kpi for duration, count, or yes/no
+                if tracking == "Yes/No (Completed or not)":
+                    # yes/no tracking
+                    completed = df[df['activity'] == "Yes"].shape[0]
+                    # st.write(completed)
+                    # not_completed = df.shape[0] - completed
+                    st.metric(label="Completed", value=completed, delta_color="normal", border=True)
+                elif tracking == "Duration (Minutes/hours)":
+                    # duration tracking
+                    total_duration = df['activity'].sum()
+                    if total_duration > 60:
+                        hours = round(total_duration / 60,2)
+                        st.metric(label="Total Duration", value=f"{hours} hours", delta_color="normal", border=True)
+                    else:
+                        st.metric(label="Total Duration", value=f"{total_duration} minutes", delta_color="normal", border=True)
+                elif tracking == "Count (Number-based)":
+                    # count tracking
+                    total_count = df['activity'].sum()
+                    goal_units = df['goal_units'].unique()[0]
+                    st.metric(label=goal_units, value=total_count, delta_color="normal", border=True)
+            with kpi6:
+                # goal achievement rate
+                tracking = df['tracking_type'].unique()[0]
+                goal = df['goal'].unique()[0]
+                if tracking != "Yes/No (Completed or not)":
+                    df['goal_achievement'] = ((df['activity'].astype(float) / float(goal)) * 100).clip(upper=100)
+                    goal_achievement = f"{round(df['goal_achievement'].mean(),2)}%"
+                else:
+                    goal_achievement = 'N/A'
+                st.metric(label="Goal Achievement Rate", value=goal_achievement, delta_color="normal", border=True)
+        
+        # create 2 columns for visuals
+        ana1, ana2 = st.columns(2)
+
+        with ana1:
+
                 # 
             with st.container(height=500):
                 # create summary table
@@ -598,44 +649,7 @@ def show_visuals(df):
 
 
         with ana2:
-            # columns for KPI metrics
-            kpi4,kpi5, kpi6 = st.columns(3)
-            with kpi4:
-                # current streak
-                _ , current_streak = calculate_streaks_grouped(df)
-                st.metric(label="Current Streak", value=current_streak, delta_color="normal", border=True)
-                # st.metric(label="N/A", value="N/A", border=True)
-            with kpi5:
-                # context aware kpi for duration, count, or yes/no
-                if tracking == "Yes/No (Completed or not)":
-                    # yes/no tracking
-                    completed = df[df['activity'] == "Yes"].shape[0]
-                    # st.write(completed)
-                    # not_completed = df.shape[0] - completed
-                    st.metric(label="Completed", value=completed, delta_color="normal", border=True)
-                elif tracking == "Duration (Minutes/hours)":
-                    # duration tracking
-                    total_duration = df['activity'].sum()
-                    if total_duration > 60:
-                        hours = round(total_duration / 60,2)
-                        st.metric(label="Total Duration", value=f"{hours} hours", delta_color="normal", border=True)
-                    else:
-                        st.metric(label="Total Duration", value=f"{total_duration} minutes", delta_color="normal", border=True)
-                elif tracking == "Count (Number-based)":
-                    # count tracking
-                    total_count = df['activity'].sum()
-                    goal_units = df['goal_units'].unique()[0]
-                    st.metric(label=goal_units, value=total_count, delta_color="normal", border=True)
-            with kpi6:
-                # goal achievement rate
-                tracking = df['tracking_type'].unique()[0]
-                goal = df['goal'].unique()[0]
-                if tracking != "Yes/No (Completed or not)":
-                    df['goal_achievement'] = ((df['activity'].astype(float) / float(goal)) * 100).clip(upper=100)
-                    goal_achievement = f"{round(df['goal_achievement'].mean(),2)}%"
-                else:
-                    goal_achievement = 'N/A'
-                st.metric(label="Goal Achievement Rate", value=goal_achievement, delta_color="normal", border=True)
+
 
             with st.container(height=500):
                 st.subheader("📈 Rating Trends")
