@@ -22,7 +22,7 @@ def get_data(user_id):
     activities = supabase.table("activity_logs").select("*").eq("user_id", user_id).execute()
     habits_df = pd.DataFrame(habits.data)
     activities_df = pd.DataFrame(activities.data)
-    if habits_df.empty and activities_df.empty:
+    if habits_df.empty or activities_df.empty:
         return habits_df, activities_df, pd.DataFrame()
     else:
         merged_df = pd.merge(activities_df, habits_df, on='habit_id', how='left')
