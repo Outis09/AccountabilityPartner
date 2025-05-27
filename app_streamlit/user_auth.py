@@ -124,34 +124,6 @@ def generate_temporary_password():
     hashed_temp_password, salt = hash_password(temp_password)
     return hashed_temp_password, salt
 
-def forgot_password(email):
-    """Handles forgot password functionality."""
-    # supabase client
-    supabase = st.session_state.supabase
-    # validate email
-    if not is_valid_email(email):
-        return False, "Invalid email format."
-    # check if email exists
-    user_response = supabase.table("users").select("*").eq("email", email).execute()
-    if not user_response.data:
-        return False, "Email not registered."
-    
-    # generate temporary password
-    temp_password, salt = generate_temporary_password()
-    
-    # update user with temporary password
-    user_data = {
-        "password_hash": temp_password,
-        "salt": salt
-    }
-    
-    try:
-        supabase.table("users").update(user_data).eq("email", email).execute()
-        return True, temp_password
-    except Exception as e:
-        support_url = "https://linkedin.com/in/samuel-ayer"
-        return False, f"An error occurred: {str(e)}. Please contact support at {support_url}"
-    
 def send_temporary_password_email(email, temp_password):
     """Sends the temporary password to the user's email."""
     # load sendgrid API key from secrets
@@ -176,13 +148,49 @@ Accountability Partner Team
     # message.attach(MIMEText(body, 'plain'))
     
     try:
-        with smtplib.SMTP("smtp.gmaail.com", 587) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, email, message.as_string())
         return True, f"Temporary password sent to {email}. Please check your inbox or spam."
     except Exception as e:
         return False, f"Failed to send email: {str(e)}. Please contact support if the problem persists."
+
+
+def forgot_password(email):
+    """Handles forgot password functionality."""
+    # supabase client
+    supabase = st.session_state.supabase
+    # validate email
+    if not is_valid_email(email):
+        return False, "Invalid email format."
+    # check if email exists
+    user_response = supabase.table("users").select("*").eq("email", email).execute()
+    if not user_response.data:
+        return False, "Email not registered."
+    
+    # generate temporary password
+    temp_password, salt = generate_temporary_password()
+
+    success, message = send_temporary_password_email(email, temp_password)
+    if not success:
+        support_url = "https://linkedin.com/in/samuel-ayer"
+        return False, f"Failed to send email: {message}. Please contact support at {support_url}"
+    
+    # update user with temporary password
+    user_data = {
+        "password_hash": temp_password,
+        "salt": salt
+    }
+    
+    try:
+        supabase.table("users").update(user_data).eq("email", email).execute()
+        return True, "Temporary password sent successfully. Please check your email."
+    except Exception as e:
+        support_url = "https://linkedin.com/in/samuel-ayer"
+        return False, f"Email sent but failed to update password: {str(e)}. Please contact support at {support_url}"
+    
+
     
 
 def forgot_username(email):

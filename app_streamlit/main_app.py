@@ -64,13 +64,13 @@ def forgot_password_dialog():
     st.write("Please enter your email address to receive a temporary password.")
     email = st.text_input("Email", key="forgot_password_email")
     if st.button("Send Temporary Password"):
-        success, message = auth.forgot_password(email)
-        if not success:
-            st.error(message)
-            return
-        if success:
-            url = "https://www.linkedin.com/in/samuel-ayer/"
-            st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
+        # success, message = auth.forgot_password(email)
+        # if not success:
+        #     st.error(message)
+        #     return
+        # if success:
+        url = "https://www.linkedin.com/in/samuel-ayer/"
+        st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
         
 
 # dialog for forgot username
