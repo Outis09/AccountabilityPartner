@@ -678,8 +678,11 @@ def show_visuals(df):
             with st.container(height=500):
                 st.subheader("⌚ Log Intervals Over Time")
                 log_intervals = calculate_log_intervals_overtime(df['log_date'])
-                chart = plot_line_chart(log_intervals, 'log_date', 'interval', 'Log Date', 'Interval (Days)', y_tick_count=5)
-                st.altair_chart(chart, use_container_width=True)
+                if log_intervals.shape[0] == 0:
+                    st.info("This activity does not have enough logs to display this visual")
+                else:
+                    chart = plot_line_chart(log_intervals, 'log_date', 'interval', 'Log Date', 'Interval (Days)', y_tick_count=5)
+                    st.altair_chart(chart, use_container_width=True)
 
 
 
