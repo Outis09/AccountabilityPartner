@@ -136,7 +136,7 @@ def step3_confirm_and_save():
         if st.button("✅ Confirm and Save", key="step3_confirm"):
             with st.spinner("Saving activity..."):
                 success= supabase.insert_activity_log(
-                    username,
+                    st.session_state.user_id,
                     data['habit_id'],
                     data['activity_date'],
                     data['tracking_input'],
