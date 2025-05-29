@@ -437,7 +437,9 @@ def demo_main(dataframe):
             with st.container(height=500):
                 st.subheader("🎯 Log vs Target")
                 if tracking != "Yes/No (Completed or not)":
-                    goal = int(goal)
+                    habit = dataframe.iloc[0]
+                    goal = int(habit['goal'])
+                    goal_units = habit['goal_units']
                     chart = hp.plot_line_chart(dataframe, 'log_date', 'activity', 'Log Date', goal_units,'goal', y_min=0, y_max=goal+10, y_tick_count=5)
                     st.altair_chart(chart, use_container_width=True)
                 else:
