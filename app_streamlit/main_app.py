@@ -96,11 +96,11 @@ def show_home():
     with centre_column:
         st.title("Accountability Partner")
         st.success("Track your habits and activities with ease!")
-        st.info("Log in to your account or sign up to get started.")
-        st.warning("Or try the demo to explore the app without creating an account.")
+
         # st.info("Please note that the demo only shows the analytics features and does not allow you to create or track habits.")
         st.image("images/AppLogo.png", use_container_width=True)
-
+        st.info("Log in/ Sign up to get started.")
+        st.warning("Or try the demo to explore the app without creating an account.")
         # create 4 columns for login, signup, demo and forgot password
         login_col, signup_col, demo_col = st.columns([1, 1, 1])
         with login_col:
