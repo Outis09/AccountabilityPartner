@@ -19,7 +19,7 @@ from activity_wizard import create_activity_wizard
 import analytics as an
 from todo import show_unlogged_activities
 from utils import supabase_client as sp
-from app_streamlit import user_auth as auth
+from utils import user_auth as auth
 
 
 # Initialize session state variables if they don't exist
@@ -43,6 +43,8 @@ if 'view_radio' not in st.session_state:
     st.session_state.view_radio = "Analytics"
 if 'sub_option' not in st.session_state:
     st.session_state.sub_option = "📊 Overview"
+if 'demo_analytics_view' not in st.session_state:
+    st.session_state.demo_analytics_view = "📊 Overview"
 if 'username' not in st.session_state:
     st.session_state.username = None
 if 'user_id' not in st.session_state:
@@ -93,10 +95,10 @@ def show_home():
     left_column, centre_column, right_column = st.columns([1,3,1])
     with centre_column:
         st.title("Accountability Partner")
-        st.write("Track your habits and activities with ease!")
-        st.write("Log in to your account or sign up to get started.")
-        st.write("Or try the demo to explore the app without creating an account.")
-        st.info("Please note that the demo only shows the analytics features and does not allow you to create or track habits.")
+        st.success("Track your habits and activities with ease!")
+        st.info("Log in to your account or sign up to get started.")
+        st.warning("Or try the demo to explore the app without creating an account.")
+        # st.info("Please note that the demo only shows the analytics features and does not allow you to create or track habits.")
         st.image("images/AppLogo.png", use_container_width=True)
 
         # create 4 columns for login, signup, demo and forgot password
@@ -188,22 +190,6 @@ def show_home():
                         url = "https://www.linkedin.com/in/samuel-ayer/"
                         st.info('Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
 
-        # # show forgot password form if forgot password button was clicked
-        # if st.session_state.forgot_password:
-        #     try:
-        #         (username_of_forgotten_password,
-        #         email_of_forgotten_password,
-        #         new_random_password) = st.session_state.authenticator.forgot_password()
-        #         if username_of_forgotten_password:
-        #             st.success(f"New password **'{new_random_password}'** to be sent to user securely")
-        #             with open('config.yaml', 'w') as file:
-        #                 yaml.dump(st.session_state.authenticator.credentials, file,default_flow_style=False)
-        #             #config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
-        #          # Random password to be transferred to the user securely
-        #         elif not username_of_forgotten_password:
-        #             st.error('Username not found')
-        #     except ForgotError as e:
-        #         st.error(e)
 
 def show_main_app():
     """Display the main application dashboard after login."""
@@ -294,6 +280,20 @@ def main():
     # Show main app page after login
     elif st.session_state.current_page == "main":
         show_main_app()
+
+    # Show demo page
+    elif st.session_state.current_page == "demo":
+        # import demo_app
+        from demo import demo_app
+        demo_app()
+        # st.title("Accountability Partner Demo")
+        # st.write("This is a demo of the Accountability Partner app.")
+        # st.write("Here you can see various analytics and insights related to your habits and activities.")
+        # st.info("Use the sidebar to navigate through the app.")
+        # demo_app()
+
+    else:
+        st.error("Page not found. Please go back to the home page.")
 
 if __name__ == "__main__":
     main()
