@@ -172,8 +172,16 @@ demo_data["log_date"] = pd.to_datetime(demo_data["log_date"])
 
 def demo_sidebar(data):
     with st.sidebar:
-        st.title("Filters")
         st.logo("images/AppLogo.png", size="large")
+        if st.button("Home"):
+            st.session_state.current_page = "home"
+            st.session_state.show_login = False
+            st.session_state.show_signup = False
+            st.session_state.forgot_password = False
+            st.session_state.username=None
+            st.rerun()
+
+        st.title("Filters")
 
         if st.session_state.demo_analytics_view == "📊 Overview":
             # date filters
@@ -232,13 +240,7 @@ def demo_sidebar(data):
             date_filtered_data = activity_filtered_data[(activity_filtered_data["log_date"] >= start_date) & (activity_filtered_data["log_date"] <= end_date)]
             return date_filtered_data
 
-        if st.button("Home"):
-            st.session_state.current_page = "home"
-            st.session_state.show_login = False
-            st.session_state.show_signup = False
-            st.session_state.forgot_password = False
-            st.session_state.username=None
-            st.rerun()
+
 
 def demo_main(dataframe):
     st.title("Accountability Partner Demo")
