@@ -294,7 +294,7 @@ def demo_main(dataframe):
             # completion rate chart
             with st.container(height=500):
                 st.subheader("✅ Completion Rate")
-                complt_rate_df = hp.completion_rate(dataframe)
+                complt_rate_df = hp.calculate_completion_rate(dataframe)
                 st.dataframe(complt_rate_df, hide_index=True)
             # average rating chart
             with st.container(height=500):
