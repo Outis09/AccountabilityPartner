@@ -87,6 +87,70 @@ def average_log_interval(log_dates):
     intervals = [(log_dates[i] - log_dates[i-1]).days for i in range(1, len(log_dates))]
     return sum(intervals) / len(intervals)
 
+
+def calculate_average_completion(df):
+    unique_habits = df[['habit_id', 'frequency', 'start_date']].drop_duplicates()
+    total_expected_logs = 0
+    total_actual_logs = 0
+    for index,row in unique_habits.iterrows():
+        habit_id = row['habit_id']
+        frequency = row['frequency']
+        start_date = pd.to_datetime(row['start_date'])
+        # actual logs
+        actual_logs = df[df['habit_id'] == habit_id].shape[0]
+        # calculate expected logs based on habit frequency
+        expected_logs = calculate_expected_logs(start_date, frequency)
+        total_expected_logs += expected_logs
+        total_actual_logs += actual_logs
+    if total_expected_logs > 0:
+        average_completion_rate = round((total_actual_logs/total_expected_logs) * 100,2)
+    else:
+        average_completion_rate = 0
+    return average_completion_rate
+
+def calc_goal_achievement(df):
+    goal_df = df[df['tracking_type'].isin(['Duration (Minutes/hours)', 'Count (Number-based)'])]
+    if goal_df.shape[0] == 0:
+        message = "This category does not have habits to be displayed for this visual"
+        chart = None
+    else:
+        # calculate achievement per activity log
+        goal_df['goal_achievement'] = ((goal_df['activity'].astype(float) / goal_df['goal'].astype('float')) * 100).clip(upper=100)
+        # group by habit
+        habit_achievement = (goal_df.groupby('habit_id').agg(
+            average_goal_achievement = ("goal_achievement", "mean"),
+            total_logs = ("name", 'count'),
+            habit_name = ("name", 'first')
+        ).reset_index().sort_values(by='average_goal_achievement', ascending=True)).round(2)
+        # plot visual
+        chart = plot_bar_chart(habit_achievement, 'habit_name', 'average_goal_achievement', 'Activity', 'Goal Achievement Rate')
+        message = None
+    return chart,message
+
+def calculate_completion_rate(df):
+    today = pd.to_datetime(datetime.now().date())
+    consistency_list = []
+    unique_habits = df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
+    for index,row in unique_habits.iterrows():
+        habit_id = row['habit_id']
+        name = row['name']
+        frequency = row['frequency']
+        start_date = pd.to_datetime(row['start_date'])
+        # actual logs
+        actual_logs = df[df['habit_id'] == habit_id].shape[0]
+        # calculate expected logs based on habit frequency
+        expected_logs = calculate_expected_logs(start_date, frequency)
+        consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
+        consistency_list.append({
+            "Habit": name,
+            "Expected Logs": expected_logs,
+            "Actual Logs":actual_logs,
+            "Completion Rate(%)": float(consistency_rate)
+        })
+    # convert completion rate list to dataframe
+    consistency_df = pd.DataFrame(consistency_list)
+    return consistency_df
+
 def calculate_log_intervals_overtime(log_dates):
     """Calculates the intervals between logs over time"""
     log_dates = sorted(pd.to_datetime(log_dates))
@@ -112,6 +176,62 @@ def calculate_expected_logs(date, frequency):
     elif frequency == "Monthly":
         expected_logs = max(((today.year - date.year) * 12 + (today.month - date.month)) + 1, 1)
     return expected_logs
+
+def create_summary_table(df):
+    habit = df.iloc[0]
+    name = habit['name']
+    goal = habit['goal']
+    goal_units = habit['goal_units']
+    frequency = habit['frequency']
+    tracking = habit['tracking_type']
+    start_date = habit['start_date']
+    # goal achievement
+    if tracking == "Yes/No (Completed or not)":
+        df['goal_achievement'] = np.nan
+        total_logs = df[df['activity'] == 'Yes'].shape[0]
+    else:
+        df['goal_achievement'] = ((df['activity'].astype(float) / float(goal)) * 100).clip(upper=100)
+        total_logs = df.shape[0]
+    # average goal achievement
+    avg_goal = df['goal_achievement'].mean()
+    # average rating
+    avg_rating = df['rating'].mean()
+    # first and last logs
+    first_log = df['log_date'].min()
+    last_log = df['log_date'].max()
+    # total logs
+    # total_logs = df.shape[0]
+    # expected logs
+    expected_logs = calculate_expected_logs(start_date, frequency)
+    # completion rate
+    completion_rate = round((total_logs/expected_logs) * 100,2)
+    # target
+    if pd.notna(goal) and goal not in [0, ""]:
+        target = f"{int(goal)}  {goal_units.lower()}  {frequency.lower()}"
+    else:
+        target = frequency
+    # streaks
+    dates = df['log_date'].to_list()
+    longest_streak, current_streak = calculate_streaks(dates, frequency)
+    # average log interval
+    avg_interval = average_log_interval(dates)
+    # create summary data
+    summary_data = {
+        'Target': target,
+        'Expected Logs': expected_logs,
+        'Total Logs': total_logs,
+        'Completion Rate': f'{completion_rate}%',
+        'Average Rating': round(avg_rating, 2),
+        'First Log Date': first_log.date(),
+        'Last Log Date': last_log.date(),
+        'Longest Streak': longest_streak,
+        'Current Streak': current_streak,
+        'Average Log Interval': f"{avg_interval:.2f} days"
+
+    }
+    # convert to dataframe
+    summary_df = pd.DataFrame(summary_data.items(), columns=['Metric', 'Value'])
+    return summary_df
 
 def plot_bar_chart(df, group_col, value_col, x_title, y_title, orientation='horizontal'):
     """Plots bar chart with altair"""
@@ -407,37 +527,28 @@ def show_visuals(df):
             # completion rate visual
             with st.container(height=500):
                 st.subheader("✅ Completion Rate")
-                today = pd.to_datetime(datetime.now().date())
-                consistency_list = []
-                unique_habits = df[['habit_id', 'name', 'frequency', 'start_date']].drop_duplicates()
-                for index,row in unique_habits.iterrows():
-                    habit_id = row['habit_id']
-                    name = row['name']
-                    frequency = row['frequency']
-                    start_date = pd.to_datetime(row['start_date'])
-                    # actual logs
-                    actual_logs = df[df['habit_id'] == habit_id].shape[0]
-                    # calculate expected logs based on habit frequency
-                    expected_logs = calculate_expected_logs(start_date, frequency)
-                    consistency_rate = "%.2f" % ((actual_logs/expected_logs) * 100)
-                    consistency_list.append({
-                        "Habit": name,
-                        "Expected Logs": expected_logs,
-                        "Actual Logs":actual_logs,
-                        "Completion Rate(%)": float(consistency_rate)
-                    })
-                # convert completion rate list to dataframe
-                consistency_df = pd.DataFrame(consistency_list)
+                consistency_df = calculate_completion_rate(df)
                 # dispay dataframe as table
                 st.dataframe(consistency_df, hide_index=True)
 
             with st.container(height=500):
                 # average rating per habit visual
-                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating',ascending=True)
                 st.subheader("⭐ Average Rating by Activity")
-                chart = plot_bar_chart(habit_averages,'name', 'rating', 'Activity', 'Average Rating')
-                st.altair_chart(chart, use_container_width=True)
-                # st.checkbox("Show values on chart", value=True)
+                habit_averages = df.groupby('name')['rating'].mean().round(2).reset_index().sort_values(by='rating', ascending=True)
+                if len(habit_averages) <= 10:
+                    chart = plot_bar_chart(habit_averages, 'name', 'rating', 'Activity', 'Average Rating')
+                    st.altair_chart(chart, use_container_width=True)
+                else:
+                    df_len = round(len(habit_averages)/2)
+                    top, bottom = st.tabs([f'Top {df_len}', f'Bottom {df_len}'])
+                    with top:
+                        highest = habit_averages.iloc[df_len+1:]
+                        chart = plot_bar_chart(highest,'name', 'rating', 'Activity', 'Average Rating')
+                        st.altair_chart(chart, use_container_width=True)
+                    with bottom:
+                        lowest = habit_averages.iloc[:df_len+1]
+                        chart = plot_bar_chart(lowest, 'name', 'rating', 'Activity', 'Average Rating')
+                        st.altair_chart(chart,use_container_width=True)
 
 
 
@@ -467,22 +578,26 @@ def show_visuals(df):
                 # st.subheader("Highlights and Sentiment Analysis from your activity logs")
                 # st.write("Select the visual you want to see")
                 st.subheader("💡 Insights from Activity Logs")
-                tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
-                with tab1:
-                    # wordcloud visual
-                    # st.subheader("Highlights from your activity logs")
-                    # create wordcloud
-                    create_wordcloud(df, 'log_notes')
-                with tab2:
-                    # sentiment analysis
-                    df['processed_text'] = df['log_notes'].apply(text_preprocessor)
-                    df['sentiment'] = df['processed_text'].apply(sentiment_analyzer)
-                    # st.subheader('Sentiment Analysis')
-                    overview_sentiments = get_sentiment_results(df, 'sentiment')
-                    fig,ax = plt.subplots(figsize=(4,3))
-                    ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)
-                    ax.axis('equal')
-                    st.pyplot(fig)
+                texts_df = df[df['log_notes'].str.strip().astype(bool)]
+                if len(texts_df) == 0:
+                    st.info("You do not have enough log notes for this visual. Please add notes to your next logs")
+                else:
+                    tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
+                    with tab1:
+                        # wordcloud visual
+                        # st.subheader("Highlights from your activity logs")
+                        # create wordcloud
+                        create_wordcloud(df, 'log_notes')
+                    with tab2:
+                        # sentiment analysis
+                        texts_df['processed_text'] = texts_df['log_notes'].apply(text_preprocessor)
+                        texts_df['sentiment'] = texts_df['processed_text'].apply(sentiment_analyzer)
+                        # st.subheader('Sentiment Analysis')
+                        overview_sentiments = get_sentiment_results(texts_df, 'sentiment')
+                        fig,ax = plt.subplots(figsize=(4,3))
+                        ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)
+                        ax.axis('equal')
+                        st.pyplot(fig)
                     # st.dataframe(overview_sentiments, hide_index=True)
 
         # log calendar visual
@@ -512,7 +627,11 @@ def show_visuals(df):
                 # calculate expected logs based on habit frequency
                 frequency = df['frequency'].unique()[0]
                 start_date = pd.to_datetime(df['start_date'].unique()[0])
-                actual_logs = df.shape[0]
+                tracking = df['tracking_type'].unique()[0]
+                if tracking == "Yes/No (Completed or not)":
+                    actual_logs = df[df['activity'] == "Yes"].shape[0]
+                else:
+                    actual_logs = df.shape[0]
                 expected_logs = calculate_expected_logs(start_date, frequency)
                 completion_rate = round((actual_logs/expected_logs) * 100,2)
                 st.metric(label="Completion Rate", value=f"{completion_rate}%", delta_color="normal", border=True)
