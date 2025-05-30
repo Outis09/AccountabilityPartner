@@ -104,7 +104,7 @@ def show_home():
         # create 4 columns for login, signup, demo and forgot password
         login_col, signup_col, demo_col = st.columns([1, 1, 1])
         with login_col:
-            if st.button("Login", use_container_width=True):
+            if st.button("Login", use_container_width=True, type='primary'):
                 st.session_state.show_login = True
                 st.session_state.show_signup = False
                 st.session_state.forgot_password = False
@@ -179,11 +179,20 @@ def show_home():
                 if user_signup_button:
                     success, message = auth.register_user(email, username, firstname, lastname, password, repeat_password)
                     if success:
-                        st.success(message)
+                        st.success("Account created successfully. Please wait while your Accountability Partner is set up for you.")
+                        success, user, error  = auth.login_user(username, password)
                         time.sleep(3)
-                        st.session_state.show_signup = False
-                        st.session_state.show_login = True
-                        st.session_state.forgot_password = False
+                        if success:
+                            st.session_state.just_logged_in = True
+                            st.session_state.current_page = "main"
+                            st.session_state['authentication_status'] = True
+                            st.session_state.username = user['username']
+                            st.session_state.user_id = user['user_id']
+                        else:
+                            st.warning("Account created successfully but could not log in automatically. Please log in.")
+                            st.session_state.show_signup = False
+                            st.session_state.show_login = True
+                            st.session_state.forgot_password = False
                         st.rerun()
                     else:
                         st.error(message)
