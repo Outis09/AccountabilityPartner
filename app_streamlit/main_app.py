@@ -131,26 +131,27 @@ def show_home():
             with st.container(border=True):
                 st.subheader("Login")
                 st.write("Please enter your username and password to log in.")
-                # show login form
-                username = st.text_input("Username", key="login_username")
-                password = st.text_input("Password", type="password", key="login_password")
-                col1, col2 = st.columns([1,3])
-                with col1:
-                    user_login_button = st.button("Login")
-                if user_login_button:
-                    success, user, error  = auth.login_user(username, password)
+                with st.form("login_form"):
+                    # show login form
+                    username = st.text_input("Username", key="login_username")
+                    password = st.text_input("Password", type="password", key="login_password")
+                    col1, col2 = st.columns([1,3])
+                    with col1:
+                        user_login_button = st.form_submit_button("Login")
+                    if user_login_button:
+                        success, user, error  = auth.login_user(username, password)
 
-                    if success:
-                        st.success("Login successful!")
-                        time.sleep(1)
-                        st.session_state.just_logged_in = True
-                        st.session_state.current_page = "main"
-                        st.session_state['authentication_status'] = True
-                        st.session_state.username = user['username']
-                        st.session_state.user_id = user['user_id']
-                        st.rerun()
-                    else:
-                        st.error(error)
+                        if success:
+                            st.success("Login successful!")
+                            time.sleep(1)
+                            st.session_state.just_logged_in = True
+                            st.session_state.current_page = "main"
+                            st.session_state['authentication_status'] = True
+                            st.session_state.username = user['username']
+                            st.session_state.user_id = user['user_id']
+                            st.rerun()
+                        else:
+                            st.error(error)
                 # columns for forgot username and password
                 forgot1, forgot2 = st.columns([1,1])
                 with forgot1:
@@ -167,37 +168,39 @@ def show_home():
                 st.subheader("Sign Up")
                 st.write("Please enter your details to create an account.")
                 # show signup form
-                email = st.text_input("Email", key="email")
-                username = st.text_input("Username", key="signup_username")
-                firstname = st.text_input("First Name", key="firstname")
-                lastname = st.text_input("Last Name", key="lastname")
-                password = st.text_input("Password", type="password", key="signup_password")
-                repeat_password = st.text_input("Repeat Password", type="password", key="repeat_password")
-                col1, col2 = st.columns([1,3])
-                with col1:
-                    user_signup_button = st.button("Sign Up")
-                if user_signup_button:
-                    success, message = auth.register_user(email, username, firstname, lastname, password, repeat_password)
-                    if success:
-                        st.success("Account created successfully. Please wait while your Accountability Partner is set up for you.")
-                        success, user, error  = auth.login_user(username, password)
-                        time.sleep(3)
+                with st.form("sign_up_form", border=False):
+                    email = st.text_input("Email", key="email")
+                    username = st.text_input("Username", key="signup_username")
+                    firstname = st.text_input("First Name", key="firstname")
+                    lastname = st.text_input("Last Name", key="lastname")
+                    password = st.text_input("Password", type="password", key="signup_password")
+                    repeat_password = st.text_input("Repeat Password", type="password", key="repeat_password")
+                    col1, col2 = st.columns([1,3])
+                    with col1:
+                        user_signup_button = st.form_submit_button("Sign Up")
+                    if user_signup_button:
+                        success, message = auth.register_user(email, username, firstname, lastname, password, repeat_password)
                         if success:
-                            st.session_state.just_logged_in = True
-                            st.session_state.current_page = "main"
-                            st.session_state['authentication_status'] = True
-                            st.session_state.username = user['username']
-                            st.session_state.user_id = user['user_id']
+                            st.success("Account created successfully. Please wait while your Accountability Partner is set up for you.")
+                            success, user, error  = auth.login_user(username, password)
+                            time.sleep(3)
+                            if success:
+                                st.session_state.just_logged_in = True
+                                st.session_state.current_page = "main"
+                                st.session_state['authentication_status'] = True
+                                st.session_state.username = user['username']
+                                st.session_state.user_id = user['user_id']
+                            else:
+                                st.warning("Account created successfully but could not log in automatically. Please log in.")
+                                st.session_state.show_signup = False
+                                st.session_state.show_login = True
+                                st.session_state.forgot_password = False
+                            st.rerun()
                         else:
-                            st.warning("Account created successfully but could not log in automatically. Please log in.")
-                            st.session_state.show_signup = False
-                            st.session_state.show_login = True
-                            st.session_state.forgot_password = False
-                        st.rerun()
-                    else:
-                        st.error(message)
-                        url = "https://www.linkedin.com/in/samuel-ayer/"
-                        st.info('Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
+                            st.error(message)
+                            if message == "Email not preauthorized.":
+                                url = "https://www.linkedin.com/in/samuel-ayer/"
+                                st.info('Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
 
 
 def show_main_app():
