@@ -44,7 +44,7 @@ def register_user(email, username, firstname, lastname, password, repeat_passwor
     # supabase client
     supabase = st.session_state.supabase
     # validate inputs
-    if not all([email, username, firstname, lastname, password]):
+    if not all([email, username, firstname, lastname, password, repeat_password]):
         return False, "All fields are required."
     # validate email
     if not is_valid_email(email):
