@@ -482,15 +482,12 @@ def show_visuals(df):
             # columns for KPI metrics
             kpi4,kpi5, kpi6 = st.columns(3)
             with kpi4:
-                    # best habit
-                best_habit = df.groupby('name')['rating'].mean().idxmax()
-                st.metric(label="Best Habit (By rating)", value=best_habit, delta_color="normal", border=True)
-
-                    # st.metric(label="Total Categories", value=df['category'].nunique(), border=True)
-            with kpi5:
                 # longest streak
                 longest_streak, current_streak = calculate_streaks_grouped(df)
                 st.metric(label="Longest Streak", value=longest_streak, delta_color="normal", border=True)
+            with kpi5:
+                # current streak
+                st.metric(label="Current Streak", value=current_streak, border=True)
             with kpi6:
                 # average completion rate
                 unique_habits = df[['habit_id', 'frequency', 'start_date']].drop_duplicates()
@@ -645,8 +642,14 @@ def show_visuals(df):
             kpi4,kpi5, kpi6 = st.columns(3)
             with kpi4:
                 # current streak
+                if frequency == "Daily":
+                    streak_unit = "days"
+                elif frequency == "Weekly":
+                    streak_unit = "weeks"
+                elif frequency == "Monthly":
+                    streak_unit == "months"
                 _ , current_streak = calculate_streaks_grouped(df)
-                st.metric(label="Current Streak", value=current_streak, delta_color="normal", border=True)
+                st.metric(label=f"Current Streak ({streak_unit})", value=current_streak, delta_color="normal", border=True)
                 # st.metric(label="N/A", value="N/A", border=True)
             with kpi5:
                 tracking = df['tracking_type'].unique()[0]

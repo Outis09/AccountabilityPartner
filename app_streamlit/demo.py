@@ -336,13 +336,12 @@ def demo_main(dataframe):
             # second set of kpis
             kpi4, kpi5, kpi6 = st.columns(3)
             with kpi4:
-                # best habit
-                best_habit = dataframe.groupby('name')['rating'].mean().idxmax()
-                st.metric(label="Best Habit (By rating)", value=best_habit, border=True)
-            with kpi5:
                 # longest streak
-                longest_streak, _ = hp.calculate_streaks_grouped(dataframe)
+                longest_streak, current_streak = hp.calculate_streaks_grouped(dataframe)
                 st.metric(label="Longest Streak", value=longest_streak, border=True)
+            with kpi5:
+                # current streak
+                st.metric(label="Current Streak", value=current_streak, border=True)
             with kpi6:
                 # average completion rate
                 average_completion_rate = hp.calculate_average_completion(dataframe) 
@@ -451,8 +450,14 @@ def demo_main(dataframe):
             
             with kpi4:
                 # current streak
+                if freq == "Daily":
+                    streak_unit = "days"
+                elif freq == "Weekly":
+                    streak_unit = "weeks"
+                elif freq == "Monthly":
+                    streak_unit == "months"
                 _, current_streak = hp.calculate_streaks_grouped(dataframe)
-                st.metric(label="Current Streak", value=current_streak, border=True)
+                st.metric(label=f"Current Streak ({streak_unit})", value=current_streak, border=True)
             with kpi5:
                 # completed logs
                 tracking = dataframe['tracking_type'].unique()[0]
