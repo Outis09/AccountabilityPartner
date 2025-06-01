@@ -65,7 +65,7 @@ def step1_fill_form():
     st.header("Step 1: Create New Habit")
 
     habit = st.text_input("Habit Name", 
-                          placeholder="e.g., Read for 30 mins each day", max_chars=50)
+                          placeholder="e.g., Read Atomic Habits", max_chars=50)
     start_date = st.date_input("Start Date", min_value=date.today())
     frequency = st.radio("Frequency", ["Daily", "Weekly", "Monthly"])
 
