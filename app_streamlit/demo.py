@@ -14,13 +14,6 @@ if "demo_analytics_view" not in st.session_state:
     st.session_state.analytics_view = "📊 Overview"
 
 
-# get longest streak for a group of habits
-def calc_streaks_grouped(df):
-    overall_longest_streak = 0
-    overall_current_streak = 0
-
-    # group by habit
-
 # habit categories and metadata
 habit_categories = {
     "Productivity": [
@@ -129,43 +122,110 @@ for category, items in habit_categories.items():
 
 # generate habit start dates
 habit_start_dates = {
-    habit['habit_id']: datetime.today() - timedelta(days=random.randint(0,90)) for habit in habits
+    habit['habit_id']: datetime.today() - timedelta(days=random.randint(60,365)) for habit in habits
 }
+
+# def calculate_expected_logs(start_date, frequency):
+#     today = datetime.today()
+#     delta_days = (today - start_date).days
+
+#     if frequency == "Daily":
+#         return delta_days
+#     elif frequency == "Weekly":
+#         return delta_days // 7
+#     elif frequency == "Monthly":
+#         return delta_days // 30
+#     else:
+#         return delta_days
+    
+def get_possible_log_dates(start_date, frequency):
+    today = datetime.today()
+    possible_dates = []
+
+    if frequency == "Daily":
+        current_date = start_date
+        while current_date <= today:
+            possible_dates.append(current_date)
+            current_date += timedelta(days=1)
+    elif frequency == "Weekly":
+        current_date =  start_date
+        while current_date <= today:
+            possible_dates.append(current_date)
+            current_date += timedelta(days=7)
+    elif frequency == "Monthly":
+        current_date = start_date
+        while current_date <= today:
+            possible_dates.append(current_date)
+            if current_date.month == 12:
+                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
+
+    return possible_dates
 
 # generate one log 
 def generate_log(habit):
     start_date = habit_start_dates[habit['habit_id']]
-    today = datetime.today()
-    # generate log date between start date and today
-    delta_days = (today - start_date).days
-    log_date = start_date + timedelta(days=random.randint(0, delta_days))
+    frequency = habit['frequency']
+    # today = datetime.today()
+    # # generate log date between start date and today
+    # delta_days = (today - start_date).days
+    # log_date = start_date + timedelta(days=random.randint(0, delta_days))
 
-    if habit["tracking_type"] == "Yes/No (Completed or not)":
-        activity = random.choice(["Yes", "No"])
-    elif habit["tracking_type"] == "Count (Number-based)":
-        activity = random.randint(int(habit["goal"] * 0.5), habit["goal"] + 2)
-    elif habit["tracking_type"] == "Duration (Minutes/hours)":
-        activity = random.randint(int(habit["goal"] * 0.5), habit["goal"] + 10)
+    possible_dates = get_possible_log_dates(start_date, frequency)
+    expected_logs = len(possible_dates)
 
-    return {
-        "habit_id": habit['habit_id'],
-        "log_date": log_date.isoformat(),
-        "name": habit["name"],
-        "habit_category": habit["habit_category"],
-        "start_date": start_date.isoformat(),
-        "frequency": habit["frequency"],
-        "tracking_type": habit["tracking_type"],
-        "goal": habit["goal"],
-        "goal_units": habit["goal_units"],
-        "activity": activity,
-        "rating": random.randint(1, 5),
-        "log_notes": random.choice(log_notes_options) or None
-    }
+    if frequency == "Daily":
+        completion_rate = random.uniform(0.75, 0.95)
+    elif frequency == "Weekly":
+        completion_rate = random.uniform(0.80, 0.95)
+    elif frequency == "Monthly":
+        completion_rate = random.uniform(0.85, 1.0)
+    
+    actual_log_count = max(1, int(expected_logs * completion_rate))
 
-# generate 1000 logs
-demo_logs = [generate_log(random.choice(habits)) for _ in range(1000)]
-demo_data = pd.DataFrame(demo_logs)
+    selected_dates = random.sample(possible_dates, min(actual_log_count, len(possible_dates)))
+
+    logs = []
+    for log_date in selected_dates:
+        if habit["tracking_type"] == "Yes/No (Completed or not)":
+            activity = random.choice(["Yes", "No"])
+        elif habit["tracking_type"] == "Count (Number-based)":
+            activity = random.randint(int(habit["goal"] * 0.5), habit["goal"] + 2)
+        elif habit["tracking_type"] == "Duration (Minutes/hours)":
+            activity = random.randint(int(habit["goal"] * 0.5), habit["goal"] + 10)
+
+        log =  {
+            "habit_id": habit['habit_id'],
+            "log_date": log_date.isoformat(),
+            "name": habit["name"],
+            "habit_category": habit["habit_category"],
+            "start_date": start_date.isoformat(),
+            "frequency": habit["frequency"],
+            "tracking_type": habit["tracking_type"],
+            "goal": habit["goal"],
+            "goal_units": habit["goal_units"],
+            "activity": activity,
+            "rating": random.randint(1, 5),
+            "log_notes": random.choice(log_notes_options) or None
+        }
+
+        logs.append(log)
+
+    return logs
+
+all_logs = []
+for habit in habits:
+    habit_logs = generate_log(habit)
+    all_logs.extend(habit_logs)
+
+# # generate 1000 logs
+# demo_logs = [generate_log(random.choice(habits)) for _ in range(1000)]
+demo_data = pd.DataFrame(all_logs)
 demo_data["log_date"] = pd.to_datetime(demo_data["log_date"])
+demo_data['start_date'] = pd.to_datetime(demo_data['start_date'])
+
+demo_data = demo_data.sort_values(['habit_id', 'log_date']).reset_index(drop=True)
 
 
 
@@ -295,6 +355,7 @@ def demo_main(dataframe):
             with st.container(height=500):
                 st.subheader("✅ Completion Rate")
                 complt_rate_df = hp.calculate_completion_rate(dataframe)
+                complt_rate_df.sort_values(by='Completion Rate(%)', ascending=False, inplace=True)
                 st.dataframe(complt_rate_df, hide_index=True)
             # average rating chart
             with st.container(height=500):
