@@ -322,7 +322,7 @@ def plot_calplot(df, date_col, cmap='YlGn'):
     """Plots a calendar plot"""
     cal_data = df.groupby(date_col).size()
     cal_data.index = pd.to_datetime(cal_data.index)
-    fig,ax = calplot.calplot(cal_data, cmap=cmap, figsize=(8,3))
+    fig,ax = calplot.calplot(cal_data, cmap=cmap, figsize=(8,3), colorbar=False)
     return fig,ax
 
 def create_wordcloud(df, notes_col):
@@ -659,12 +659,12 @@ def show_visuals(df):
                     st.metric(label="Completed", value=completed, delta_color="normal", border=True)
                 elif tracking == "Duration (Minutes/hours)":
                     # duration tracking
-                    total_duration = df['activity'].sum()
+                    total_duration = df['activity'].astype(int).sum()
                     if total_duration > 60:
                         hours = round(total_duration / 60,2)
-                        st.metric(label="Total Duration", value=f"{hours} hours", delta_color="normal", border=True)
+                        st.metric(label="Total Duration (hrs)", value=hours, delta_color="normal", border=True)
                     else:
-                        st.metric(label="Total Duration", value=f"{total_duration} minutes", delta_color="normal", border=True)
+                        st.metric(label="Total Duration (mins)", value=total_duration, delta_color="normal", border=True)
                 elif tracking == "Count (Number-based)":
                     # count tracking
                     total_count = df['activity'].sum()
