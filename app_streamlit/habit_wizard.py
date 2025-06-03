@@ -64,13 +64,21 @@ def step1_fill_form():
     """Creates the interface for creating new activities"""
     st.header("Step 1: Create New Habit")
 
+    # retrieve stored data if it exists
+    stored_data = st.session_state.form_data if 'form_data' in st.session_state else {}
+
     habit = st.text_input("Habit Name", 
+                          value=stored_data.get('habit', ''),
                           placeholder="e.g., Read Atomic Habits", max_chars=50)
-    start_date = st.date_input("Start Date", min_value=date.today())
-    frequency = st.radio("Frequency", ["Daily", "Weekly", "Monthly"])
+    start_date = st.date_input("Start Date", 
+                               value=stored_data.get('start_date', date.today()),
+                               min_value=date.today())
+    frequency = st.radio("Frequency", ["Daily", "Weekly", "Monthly"],
+                         index=["Daily", "Weekly", "Monthly"].index(stored_data.get('frequency', 'Daily')))
 
     tracking_options = ["Yes/No (Completed or not)", "Count (Number-based)", "Duration (Minutes/hours)"]
-    tracking = st.radio("How to track this habit?", tracking_options)
+    tracking = st.radio("How to track this habit?", tracking_options, 
+                        index=tracking_options.index(stored_data.get('tracking',"Yes/No (Completed or not)" )))
 
     goal = None
     goal_units = None
@@ -78,28 +86,37 @@ def step1_fill_form():
     if tracking == "Yes/No (Completed or not)":
         st.info("Goals with this type are automatically expected to be completed at least once per frequency.")
     elif tracking == "Count (Number-based)":
-        goal = st.number_input("Number of times you want to do this", min_value=1, step=1)
-        goal_units = st.text_input("Enter unit of measurement", placeholder="e.g., times, reps, sets")
+        goal = st.number_input("Number of times you want to do this", min_value=1, step=1, 
+                               value=int(stored_data.get('goal', 1)))
+        goal_units = st.text_input("Enter unit of measurement", placeholder="e.g., times, reps, sets",
+                                   value=stored_data.get('goal_units', ''))
         # goal_units = "times"
     elif tracking == "Duration (Minutes/hours)":
-        goal = st.number_input("Number of minutes you want to spend", min_value=1, step=5)
+        goal = st.number_input("Number of minutes you want to spend", min_value=1, step=5,
+                               value=int(stored_data.get('goal', 5)))
         goal_units = "minutes"
 
     categories = load_categories()
-    category = st.selectbox("Category", categories)
+    category_default = stored_data.get('category', categories[0] if categories else '')
+    category = st.selectbox("Category", categories,
+                            index=categories.index(category_default) if category_default in categories else 0)
 
     custom_category = None
     if category == "Other":
-        custom_category = st.text_input("Enter custom category")
+        custom_category = st.text_input("Enter custom category",
+                                        value=stored_data.get('category', '') if category_default == "Other" else '')
 
     notes = st.text_area("Why is this habit important?", 
                          height=100, 
-                         placeholder="e.g., To improve my health, to learn a new skill, etc.")
+                         placeholder="e.g., To improve my health, to learn a new skill, etc.",
+                         value=stored_data.get('notes', ''))
 
-    end_date_status = st.radio("When do you want to end?", ["Indefinitely", "Specific Date"])
+    end_date_status = st.radio("When do you want to end?", ["Indefinitely", "Specific Date"],
+                               index=["Indefinitely", "Specific Date"].index(stored_data.get('end_date_status', 'Indefinitely')))
     end_date = None
     if end_date_status == "Specific Date":
-        end_date = st.date_input("Select End Date", min_value=date.today())
+        end_date = st.date_input("Select End Date", min_value=date.today(),
+                                 value=stored_data.get('end_date', date.today()))
 
     if st.button("Next ➡️"):
         if not habit:
