@@ -66,19 +66,25 @@ def step2_log_details():
     data = st.session_state.activity_data
     today = date.today()
 
-    activity_date = st.date_input("When did this activity take place?", max_value=today, value=today)
+    activity_date = st.date_input("When did this activity take place?", max_value=today, 
+                                  value=data.get('activity_date', today))
 
     tracking_input = None
     if data['tracking_type'] == "Yes/No (Completed or not)":
-        tracking_input = st.radio("Did you complete this activity?", ["Yes", "No"])
+        tracking_input = st.radio("Did you complete this activity?", ["Yes", "No"],
+                                  index=["Yes", "No"].index(data.get('tracking_input', 'Yes')))
     elif data['tracking_type'] == "Count (Number-based)":
-        tracking_input = st.number_input("How many times did you do this?", min_value=0, step=1)
+        tracking_input = st.number_input("How many times did you do this?", min_value=0, step=1,
+                                         value=int(data.get('tracking_input', 0)))
     elif data['tracking_type'] == "Duration (Minutes/hours)":
-        tracking_input = st.number_input("How many minutes did you spend on this activity?", min_value=0, step=5)
+        tracking_input = st.number_input("How many minutes did you spend on this activity?", min_value=0, step=5,
+                                         value=int(data.get('tracking_input', 0)))
 
-    rating = int(st.number_input("Rate your productivity during this activity (1-5)", min_value=1, max_value=5, step=1))
+    rating = int(st.number_input("Rate your productivity during this activity (1-5)", min_value=1, max_value=5, step=1,
+                                 value=int(data.get('rating',1))))
 
-    comments = st.text_area("Any comments?", height=100, placeholder="e.g., I felt great, I struggled with this, etc.")
+    comments = st.text_area("Any comments?", height=100, placeholder="e.g., I felt great, I struggled with this, etc.",
+                            value=data.get('comments', ''))
 
     if st.button("Next ➡️", key="step2_next"):
         if (data['tracking_type'] == "Yes/No (Completed or not)" and not tracking_input) or (data['tracking_type'] != "Yes/No (Completed or not)" and tracking_input == 0):
