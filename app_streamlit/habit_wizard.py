@@ -125,6 +125,10 @@ def step1_fill_form():
         if category == "Other" and not custom_category:
             st.warning("Please provide a custom category name.")
             return
+        if end_date_status == "Specific Date":
+            if end_date < start_date:
+                st.error("End date cannot be before start date.")
+                st.stop()
 
         # Save data into session
         st.session_state.form_data = {
