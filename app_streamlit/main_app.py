@@ -31,8 +31,8 @@ if 'show_signup' not in st.session_state:
     st.session_state.show_signup = False
 if 'forgot_password' not in st.session_state:
     st.session_state.forgot_password = False
-if 'authenticator' not in st.session_state:
-    st.session_state.authenticator = None
+# if 'authenticator' not in st.session_state:
+#     st.session_state.authenticator = None
 if 'authentication_status' not in st.session_state:
     st.session_state['authentication_status'] = None
 if 'just_logged_in' not in st.session_state:
@@ -88,6 +88,15 @@ def forgot_username_dialog():
         if success:
             url = "https://www.linkedin.com/in/samuel-ayer/"
             st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
+
+def logout():
+    keys_to_clear = ['show_login','show_signup','forgot_password','authentication_status','just_logged_in',
+                     'active_view','view_radio','sub_option','demo_analytics_view','username','user_id',
+                     'supabase',"current_step","form_data","warning_confirm", 'habit_details','activity_data',
+                       'activity_step', 'confirmed_save','duration_warning_accepted',]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
 
 def show_home():
     """Display the home page with login, signup, and demo options."""
@@ -263,10 +272,11 @@ def show_main_app():
 
         if st.sidebar.button("Logout"):
             st.session_state.current_page = "home"
-            st.session_state.show_login = False
-            st.session_state.show_signup = False
-            st.session_state.forgot_password = False
-            st.session_state.username=None
+            # st.session_state.show_login = False
+            # st.session_state.show_signup = False
+            # st.session_state.forgot_password = False
+            # st.session_state.username=None
+            logout()
             st.rerun()
 
 
