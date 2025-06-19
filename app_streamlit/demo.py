@@ -303,7 +303,7 @@ def demo_sidebar(data):
 
 def demo_main(dataframe):
     st.title("Accountability Partner Demo")
-    st.write("Track your habits and activities with ease!")
+    # st.write("Track your habits and activities with ease!")
     st.info("Please note that the demo only shows the analytics features and does not allow users to create or track habits.")
     st.warning("The data for this demo is automatically generated and does not reflect real user data. It changes upon refresh therefore results may vary.")
 
