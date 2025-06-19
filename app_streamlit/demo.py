@@ -122,7 +122,7 @@ for category, items in habit_categories.items():
 
 # generate habit start dates
 habit_start_dates = {
-    habit['habit_id']: datetime.today() - timedelta(days=random.randint(60,365)) for habit in habits
+    habit['habit_id']: datetime.today() - timedelta(days=random.randint(1,90)) for habit in habits
 }
 
 # def calculate_expected_logs(start_date, frequency):
@@ -219,8 +219,7 @@ for habit in habits:
     habit_logs = generate_log(habit)
     all_logs.extend(habit_logs)
 
-# # generate 1000 logs
-# demo_logs = [generate_log(random.choice(habits)) for _ in range(1000)]
+
 demo_data = pd.DataFrame(all_logs)
 demo_data["log_date"] = pd.to_datetime(demo_data["log_date"])
 demo_data['start_date'] = pd.to_datetime(demo_data['start_date'])
