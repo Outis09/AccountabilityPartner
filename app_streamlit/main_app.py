@@ -55,6 +55,18 @@ if 'supabase' not in st.session_state:
 
 supabase = sp.init_supabase()
 
+# check probe table when the app starts to keep supabase connection alive
+def keep_supabase_alive():
+    """Function to keep the Supabase connection alive."""
+    try:
+        # Check if the connection is alive by querying a simple table
+        supabase.table('probe_action').select('*').execute()
+    except Exception as e:
+        print(f"Error keeping Supabase connection alive: {e}")
+
+# Call the function to check the probe table
+keep_supabase_alive()
+
 
 # function to change active view
 def update_active_view():
