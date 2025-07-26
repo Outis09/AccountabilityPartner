@@ -5,6 +5,7 @@ on:
     # Runs "at minute 0 past every 6 hours" (see https://crontab.guru)...
     # This will keep the app alive by probing it every 6 hours.
     - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
   probe_deployed_app:
