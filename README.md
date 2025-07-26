@@ -30,7 +30,7 @@
 ## Data Model
 The core entities in Accountability Partner include `users`, `habits`, and `activity logs`. Here's a visual representation of the schema:
 
-![Data Model](Untitled-1.png)
+![Data Model](images/ERD.png)
 
 ---
 
