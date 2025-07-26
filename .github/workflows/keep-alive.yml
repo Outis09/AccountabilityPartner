@@ -1,19 +1,42 @@
 # .github/workflows/keep-alive.yml
-name: Trigger Probe of Deployed App on a CRON Schedule
+# name: Trigger Probe of Deployed App on a CRON Schedule
+# on:
+#   schedule:
+#     # Runs "at minute 0 past every 6 hours" (see https://crontab.guru)...
+#     # This will keep the app alive by probing it every 6 hours.
+#     - cron: '0 */6 * * *'
+#   workflow_dispatch: # Allows manual triggering of the workflow
+
+# jobs:
+#   probe_deployed_app:
+#     runs-on: ubuntu-latest
+#     name: A job to probe deployed app
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#       - name: Probe Deployed App Action Step
+#         uses: ./probe-action # Uses an action in the probe-action directory
+#         id: probe
+# borrowed from https://github.com/JeanMILPIED/reparatorAI/tree/main/probe-action
+name: Keep alive streamlit
 on:
   schedule:
-    # Runs "at minute 0 past every 6 hours" (see https://crontab.guru)...
-    # This will keep the app alive by probing it every 6 hours.
     - cron: '0 */6 * * *'
-  workflow_dispatch: # Allows manual triggering of the workflow
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  probe_deployed_app:
+  build-and-probe:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
-    name: A job to probe deployed app
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Probe Deployed App Action Step
-        uses: ./probe-action # Uses an action in the probe-action directory
-        id: probe
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Build Docker Image
+        run: docker build -t my-probe-image -f probe-action/Dockerfile .
+
+      - name: Run Docker Container
+        run: docker run --rm my-probe-image
