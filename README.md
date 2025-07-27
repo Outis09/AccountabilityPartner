@@ -44,7 +44,10 @@ The Accountability Partner dashboard provides actionable insights to help users 
 - 📊 **Most/Least Performed Habits:** Understand which habits are easiest to maintain versus those needing intervention.
 - 🔍 **Time-Based Comparisons:** View progress week-over-week or month-over-month for performance reviews.
 
+Below is a GIF of the Overview Dashboard from the Demo
 
+
+![Demo Overview](images/Demo%20Overview.gif)
 
 ---
 
