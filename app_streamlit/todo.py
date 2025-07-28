@@ -17,7 +17,6 @@ def show_unlogged_activities(user_id):
     Display unlogged activities for the user.
     This function fetches the unlogged activities from the database and displays them in the Streamlit app.
     """
-    # st.header("Unlogged Activities")
     # get unlogged activities
     daily_unlogged,weekly_unlogged,monthly_unlogged = supabase.get_unlogged_activities(st.session_state.user_id)
 

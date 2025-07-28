@@ -16,7 +16,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-# nltk.download(['vader_lexicon', 'punkt_tab', 'stopwords', 'wordnet'])
+
 
 # initialize session states
 if 'active_view' not in st.session_state:
@@ -199,8 +199,6 @@ def create_summary_table(df):
     # first and last logs
     first_log = df['log_date'].min()
     last_log = df['log_date'].max()
-    # total logs
-    # total_logs = df.shape[0]
     # expected logs
     expected_logs = calculate_expected_logs(start_date, frequency)
     # completion rate
@@ -263,8 +261,6 @@ def plot_bar_chart(df, group_col, value_col, x_title, y_title, orientation='hori
 
 def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None, y_min=None, y_max=None, y_tick_count=None):
     """Plots a line chart with altair"""
-    # df['display_date'] = pd.to_datetime(df[date_col]).dt.strftime('%a %d')
-    # df[date_col] = df[date_col].dt.strftime('%Y-%m-%d')
     df[date_col] = pd.to_datetime(df[date_col])
     df[value_col] = df[value_col].astype(float)
 
@@ -276,7 +272,6 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None
     line = chart.mark_line(point=True).encode(
         x=alt.X(f'{date_col}:T',
                 title=x_title,
-                # sort=alt.SortField(field=date_col, order='ascending')
                 ),
         y=alt.Y(f'{value_col}:Q', 
                 title=y_title,
@@ -290,28 +285,8 @@ def plot_line_chart(df, date_col, value_col, x_title, y_title, target_value=None
 
     # add target line if specified
     if target_value is not None:
-        # target_df = pd.DataFrame({value_col: [target_value]})
-        # rule = alt.Chart(target_df).mark_rule(color='red').encode(y=alt.Y(f'{value_col}:Q'))
-        # yscale = alt.Scale(domain=[
-        #     min(df[value_col].min(), target_value),
-        #     max(df[value_col].max(), target_value)
-        # ])
-        
         rule = chart.mark_rule(color='red').encode(
             alt.Y(f'max({target_value}):Q'))
-
-        # text = alt.Chart().mark_text(
-        #     text='Target',
-        #     align='right',
-        #     baseline='bottom',
-        #     dx=5,
-        #     dy=-5,
-        #     color='red'
-        # ).encode(
-        #    # y=alt.datum(target_value),
-        #     # x=alt.value(chart.width - 30 )
-        # )
-
         chart = line + rule
     else:
         chart = line
@@ -460,18 +435,15 @@ def show_sidebar(merged_df):
 
 def show_visuals(df):
     if st.session_state.sub_option == "📊 Overview":
-        # st.header("📈 Visualize your progress")
         # 2 kpi column divisions
         kpi_section1, kpi_section2 = st.columns(2)
         with kpi_section1:
             # columns for KPI metrics
             kpi1,kpi2,kpi3 = st.columns(3)
             with kpi1:
-                # with st.container(height=100):
                     # total habits
                     st.metric(label="Total Habits", value=df['habit_id'].nunique(), border=True)
             with kpi2:
-                # with st.container(height=100):
                 # total logs
                 st.metric(label="Total Logs", value=df['log_id'].nunique(), border=True)
             with kpi3:
@@ -507,12 +479,6 @@ def show_visuals(df):
                     average_completion_rate = round((total_actual_logs/total_expected_logs) * 100,2)
                 else:
                     average_completion_rate = 0
-                # with st.container(height=100):
-                #     st.write("Average Completion Rate")
-                #     if average_completion_rate < 80:
-                #         st.markdown(f"<h4 style='color:red;'>{average_completion_rate:.2f}%</h4>", unsafe_allow_html=True)
-                #     else:
-                #         st.markdown(f"<h4 style='color:green;'>{average_completion_rate:.2f}%</h4>", unsafe_allow_html=True)
                 st.metric(label="Average Completion Rate", value=f"{average_completion_rate}%", delta_color="normal", border=True)
 
         # create 2 columns for charts
@@ -572,8 +538,6 @@ def show_visuals(df):
 
             with st.container(height=500):
                 # give users option to select wordcloud visual or sentiment analysis
-                # st.subheader("Highlights and Sentiment Analysis from your activity logs")
-                # st.write("Select the visual you want to see")
                 st.subheader("💡 Insights from Activity Logs")
                 texts_df = df[df['log_notes'].str.strip().astype(bool)]
                 if len(texts_df) == 0:
@@ -581,36 +545,24 @@ def show_visuals(df):
                 else:
                     tab1, tab2 = st.tabs(['Highlights', 'Sentiment Analysis'])
                     with tab1:
-                        # wordcloud visual
-                        # st.subheader("Highlights from your activity logs")
                         # create wordcloud
                         create_wordcloud(df, 'log_notes')
                     with tab2:
                         # sentiment analysis
                         texts_df['processed_text'] = texts_df['log_notes'].apply(text_preprocessor)
                         texts_df['sentiment'] = texts_df['processed_text'].apply(sentiment_analyzer)
-                        # st.subheader('Sentiment Analysis')
                         overview_sentiments = get_sentiment_results(texts_df, 'sentiment')
                         fig,ax = plt.subplots(figsize=(4,3))
                         ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)
                         ax.axis('equal')
                         st.pyplot(fig)
-                    # st.dataframe(overview_sentiments, hide_index=True)
 
         # log calendar visual
         st.subheader("📅 Log Calendar")
-        # github_cmap = mcolors.ListedColormap([
-        # "#ebedf0",  # 0 contributions
-        # "#c6e48b",  # 1-9 contributions
-        # "#7bc96f",  # 10-19
-        # "#239a3b",  # 20-29
-        # "#196127"   # 30+
-        #     ])
         fig,ax = plot_calplot(df, 'log_date')
         st.pyplot(fig, use_container_width=True)
     elif st.session_state.sub_option == "📈 Activity Analytics":
         habit_name  = df['name'].unique()[0]
-        # st.header(f"📈 Analytics for {habit_name}")
         st.metric(label='Activity', value=habit_name)
         # main kpi columns
         main_kpi1, main_kpi2 = st.columns(2)
@@ -650,15 +602,12 @@ def show_visuals(df):
                     streak_unit == "months"
                 _ , current_streak = calculate_streaks_grouped(df)
                 st.metric(label=f"Current Streak ({streak_unit})", value=current_streak, delta_color="normal", border=True)
-                # st.metric(label="N/A", value="N/A", border=True)
             with kpi5:
                 tracking = df['tracking_type'].unique()[0]
                 # context aware kpi for duration, count, or yes/no
                 if tracking == "Yes/No (Completed or not)":
                     # yes/no tracking
                     completed = df[df['activity'] == "Yes"].shape[0]
-                    # st.write(completed)
-                    # not_completed = df.shape[0] - completed
                     st.metric(label="Completed", value=completed, delta_color="normal", border=True)
                 elif tracking == "Duration (Minutes/hours)":
                     # duration tracking
@@ -687,9 +636,7 @@ def show_visuals(df):
         # create 2 columns for visuals
         ana1, ana2 = st.columns(2)
 
-        with ana1:
-
-                # 
+        with ana1: 
             with st.container(height=500):
                 # create summary table
                 st.subheader("📋 Summary")
@@ -764,7 +711,6 @@ def show_visuals(df):
                 df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=order, ordered=True)
                 day_counts = df['day_of_week'].value_counts().sort_index().reset_index()
                 st.subheader("🗓️ Activity Logs by Day of Week")
-                # st.dataframe(day_counts, hide_index=True)
                 chart = plot_bar_chart(day_counts, 'day_of_week', 'count', 'Number of Logs', 'Day of Week', orientation='vertical')
                 st.altair_chart(chart, use_container_width=True)
 
@@ -792,9 +738,6 @@ def show_visuals(df):
                     ax.pie(df['sentiment'].value_counts(), labels=df['sentiment'].value_counts().index, autopct='%1.1f%%', startangle=90)
                     ax.axis('equal')
                     st.pyplot(fig)
-                    # st.write('Sentiment Analysis')
-                    # sentiment_df = get_sentiment_results(df, 'sentiment')
-                    # st.dataframe(sentiment_df, hide_index=True)
 
             # log intervals over time
             with st.container(height=500):
@@ -827,10 +770,8 @@ def show_visuals(df):
             'log_notes': 'Notes'
         }, inplace=True)
         st.header("Your activity logs data")
-        # tab1, tab2, tab3 = st.tabs(['📊 Overview', '📈 Activity Analytics',  "🗃️ Data" ])
         st.write(f"Showing {len(data)} records based on your filter selections.")
         st.dataframe(data, hide_index=True)
-        # st.dataframe(habit_df)
 
 
 
@@ -842,12 +783,5 @@ def show_analytics(merged_df):
     st.radio(label="Sub", options=["📊 Overview", "📈 Activity Analytics", "🗃️ Data"], key="sub_option", label_visibility='collapsed', horizontal=True)
     df = show_sidebar(merged_df)
     show_visuals(df)
-    # with st.sidebar:
-    #     st.write('Testing')
-    #     if st.session_state.sub_option == "📊 Overview":
-    #         st.write("Filters for option 1")
-    #     elif st.session_state.sub_option == "2":
-    #         st.write("Filters for option 2")
-    #     elif st.session_state.sub_option == "3":
-    #         st.write("Filters for option 3")
+
 

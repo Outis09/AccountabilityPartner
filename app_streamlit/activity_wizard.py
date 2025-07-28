@@ -9,13 +9,10 @@ from datetime import date
 import textwrap
 import os
 import sys
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# from db import db_operations as db  
 from app_streamlit.utils import supabase_client as supabase
 
 username = st.session_state.get("username")
 user_id = st.session_state.get("user_id")
-# supabase = supabase.init_supabase()
 
 def load_categories():
     """Load categories"""
@@ -40,7 +37,7 @@ def step1_select_habit():
     if selected_cat:
         habit_details = load_habits(selected_cat)
         habits = list(habit_details.keys())
-        st.session_state.habit_details = habit_details  # save for later
+        st.session_state.habit_details = habit_details 
 
     selected_habit = st.selectbox("Select a Habit", habits) if habits else None
 
@@ -153,8 +150,7 @@ def step3_confirm_and_save():
                 st.success("Activity successfully logged!")
                 st.session_state.activity_step = 4
                 st.rerun()
-            # else:
-            #     st.error(message)
+
 
 
 

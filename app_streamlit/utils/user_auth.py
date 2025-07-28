@@ -9,9 +9,6 @@ import streamlit as st
 import requests
 import smtplib
 from email.mime.text import MIMEText
-# from email.mime.multipart import MIMEMultipart
-# from sendgrid import SendGridAPIClient
-# from sendgrid.helpers.mail import Mail
 
 def hash_password(password,salt=None):
     """Hashes a password with a salt using SHA-256."""
@@ -145,7 +142,6 @@ Accountability Partner Team
     message['From'] = sender_email
     message['To'] = email
     message['Subject'] = subject
-    # message.attach(MIMEText(body, 'plain'))
     
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
@@ -212,35 +208,6 @@ def forgot_username(email):
 
 def send_username_email(email, username):
     """Sends the username to the user's email."""
-#     # get resend email credentials
-#     api_key = st.secrets['API_KEY']
-#     sender = st.secrets['RESEND_SENDER']
-#     # email message
-#     data = {
-#         "from": f"Accountability Partner <accountabilitypartner@resend.dev>",
-#         "to": "chiefacctpartner@gmail.com",
-#         "subject": "Your Username",
-#         "html": f"""
-# <p>Hello</p>
-# <p>Your username is: <strong>{username}</strong></p>
-# <p>Please use this username to log in to your account.</p>
-# <p>Regards,<br>Accountability Partner Team</p>
-# """
-#     }
-#     try:
-#         response = requests.post(
-#             "https://api.resend.com/emails",
-#             headers={"Authorization": f"Bearer {api_key}",
-#                      "Content-Type": "application/json"},
-#             json=data
-#         )
-#         if response.status_code == 200:
-#             return True, f"Username sent to {email}. Please check your inbox or spam."
-#         else:
-#             return False, f"Failed to send email: {response.text}. Please contact support if the problem persists."
-#     except Exception as e:
-#         return False, f"An error occurred: {str(e)}. Please contact support if the problem persists."
-
     # load sendgrid API key from secrets
     sender_email = st.secrets['smtp_sender']
     sender_password = st.secrets['smtp_password']
@@ -259,7 +226,6 @@ Accountability Partner Team
     message['From'] = sender_email
     message['To'] = email
     message['Subject'] = subject
-    # message.attach(MIMEText(body, 'plain'))
     
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:

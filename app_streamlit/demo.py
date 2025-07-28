@@ -125,18 +125,6 @@ habit_start_dates = {
     habit['habit_id']: datetime.today() - timedelta(days=random.randint(1,90)) for habit in habits
 }
 
-# def calculate_expected_logs(start_date, frequency):
-#     today = datetime.today()
-#     delta_days = (today - start_date).days
-
-#     if frequency == "Daily":
-#         return delta_days
-#     elif frequency == "Weekly":
-#         return delta_days // 7
-#     elif frequency == "Monthly":
-#         return delta_days // 30
-#     else:
-#         return delta_days
     
 def get_possible_log_dates(start_date, frequency):
     today = datetime.today()
@@ -167,11 +155,6 @@ def get_possible_log_dates(start_date, frequency):
 def generate_log(habit):
     start_date = habit_start_dates[habit['habit_id']]
     frequency = habit['frequency']
-    # today = datetime.today()
-    # # generate log date between start date and today
-    # delta_days = (today - start_date).days
-    # log_date = start_date + timedelta(days=random.randint(0, delta_days))
-
     possible_dates = get_possible_log_dates(start_date, frequency)
     expected_logs = len(possible_dates)
 
@@ -303,7 +286,6 @@ def demo_sidebar(data):
 
 def demo_main(dataframe):
     st.title("Accountability Partner Demo")
-    # st.write("Track your habits and activities with ease!")
     st.info("Please note that the demo only shows the analytics features and does not allow users to create or track habits.")
     st.warning("The data for this demo is automatically generated and does not reflect real user data. It changes upon refresh therefore results may vary.")
 
@@ -316,7 +298,6 @@ def demo_main(dataframe):
     
     # visuals for overview page
     if st.session_state.demo_analytics_view == "📊 Overview":
-        # st.dataframe(dataframe)
         # kpi columns
         overview_kpi1, overview_kp2 = st.columns(2)
         with overview_kpi1:
@@ -396,7 +377,6 @@ def demo_main(dataframe):
                     # tabs for highlights wordcloud and sentiment analysis
                     tab1, tab2 = st.tabs(["Highlights", "Sentiment Analysis"])
                     with tab1:
-                        # st.write("Wordcloud of highlights from activity logs")
                         hp.create_wordcloud(texts_df, 'log_notes')
                     with tab2:
                         texts_df['processed_text'] = texts_df['log_notes'].apply(hp.text_preprocessor)
@@ -406,7 +386,6 @@ def demo_main(dataframe):
                         ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)
                         ax.axis('equal')
                         st.pyplot(fig)
-                        # st.write("Sentiment analysis of activity logs")
         
         # log calendar chart
         st.subheader("📅 Log Calendar")
@@ -463,10 +442,7 @@ def demo_main(dataframe):
                 if tracking == "Yes/No (Completed or not)":
                     # Yes/No (Completed or not) tracking
                     completed = dataframe[dataframe['activity'] == "Yes"].shape[0]
-                    # st.write(completed)
-                    # not_completed = df.shape[0] - completed
                     st.metric(label="Completed", value=completed, delta_color="normal", border=True)
-                    # st.write(dataframe[dataframe['activity'] == "Yes"])
                 elif tracking == "Duration (Minutes/hours)":
                     # duration tracking
                     total_duration = dataframe['activity'].sum()
@@ -540,7 +516,6 @@ def demo_main(dataframe):
                     with tab2:
                         texts_df['processed_text'] = texts_df['log_notes'].apply(hp.text_preprocessor)
                         texts_df['sentiment'] = texts_df['processed_text'].apply(hp.sentiment_analyzer)
-                        # st.subheader('Sentiment Analysis')
                         overview_sentiments = hp.get_sentiment_results(texts_df, 'sentiment')
                         fig,ax = plt.subplots(figsize=(4,3))
                         ax.pie(overview_sentiments['Percentage'], labels=overview_sentiments['Sentiment'], autopct='%1.1f%%', startangle=90)

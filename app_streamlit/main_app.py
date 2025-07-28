@@ -31,8 +31,6 @@ if 'show_signup' not in st.session_state:
     st.session_state.show_signup = False
 if 'forgot_password' not in st.session_state:
     st.session_state.forgot_password = False
-# if 'authenticator' not in st.session_state:
-#     st.session_state.authenticator = None
 if 'authentication_status' not in st.session_state:
     st.session_state['authentication_status'] = None
 if 'just_logged_in' not in st.session_state:
@@ -78,11 +76,6 @@ def forgot_password_dialog():
     st.write("Please enter your email address to receive a temporary password.")
     email = st.text_input("Email", key="forgot_password_email")
     if st.button("Send Temporary Password"):
-        # success, message = auth.forgot_password(email)
-        # if not success:
-        #     st.error(message)
-        #     return
-        # if success:
         url = "https://www.linkedin.com/in/samuel-ayer/"
         st.info('This feature has not been implemented yet. Please contact the admin on LinkedIn: [Samuel Ayer](%s)' % url)
         
@@ -118,7 +111,6 @@ def show_home():
         st.title("Accountability Partner")
         st.success("Track your habits and activities with ease!")
 
-        # st.info("Please note that the demo only shows the analytics features and does not allow you to create or track habits.")
         st.image("images/AppLogo.png", use_container_width=True)
         st.info("Log in/ Sign up to get started.")
         st.warning("Or try the demo to explore the app without creating an account.")
@@ -226,19 +218,14 @@ def show_home():
 
 def show_main_app():
     """Display the main application dashboard after login."""
-    
-    # st.title("Accountability Partner Dashboard")
+
 
     if st.session_state['authentication_status']:
         with st.sidebar:
             st.title("Accountability Partner")
             st.write("Track your habits and activities with ease!")
             st.logo("images/AppLogo.png", size="large")
-        # st.session_state.username = st.session_state['username']
-        # st.write(f"*{st.session_state.username}*, Welcome to your dashboard! Here you can log and track your habits and activities.")
-        # st.info("Use the radio to navigate through different features.")
-        # log out button
-        # st.session_state.authenticator.logout()
+
 
 
 
@@ -257,7 +244,6 @@ def show_main_app():
         if main_view == "Analytics" or st.session_state.just_logged_in:
             if len(merged_df) == 0:
                 st.info("New user? Please create a habit and log some activities to unlock analytics.")
-                # st.info("No data available for analytics. Please log some activities.")
             else:
                 st.title("📈 Analytics Dashboard")
                 if len(merged_df) < 10 or len(habits_df) < 5:
@@ -284,10 +270,6 @@ def show_main_app():
 
         if st.sidebar.button("Logout"):
             st.session_state.current_page = "home"
-            # st.session_state.show_login = False
-            # st.session_state.show_signup = False
-            # st.session_state.forgot_password = False
-            # st.session_state.username=None
             logout()
             st.rerun()
 
@@ -306,7 +288,6 @@ def show_main_app():
 
 def main():
     """Main function to run the Streamlit app."""
-    # initialize_authenticator()
     # Show home page
     if st.session_state.current_page == "home":
         show_home()
@@ -320,11 +301,6 @@ def main():
         # import demo_app
         from demo import demo_app
         demo_app()
-        # st.title("Accountability Partner Demo")
-        # st.write("This is a demo of the Accountability Partner app.")
-        # st.write("Here you can see various analytics and insights related to your habits and activities.")
-        # st.info("Use the sidebar to navigate through the app.")
-        # demo_app()
 
     else:
         st.error("Page not found. Please go back to the home page.")

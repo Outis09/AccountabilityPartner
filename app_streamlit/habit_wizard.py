@@ -10,7 +10,6 @@ import json
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# from db.db_operations import safe_db_call, insert_habit
 from app_streamlit.utils import supabase_client as supabase
 import time
 
@@ -90,7 +89,7 @@ def step1_fill_form():
                                value=int(stored_data.get('goal', 1)))
         goal_units = st.text_input("Enter unit of measurement", placeholder="e.g., times, reps, sets",
                                    value=stored_data.get('goal_units', ''))
-        # goal_units = "times"
+
     elif tracking == "Duration (Minutes/hours)":
         goal = st.number_input("Number of minutes you want to spend", min_value=1, step=5,
                                value=int(stored_data.get('goal', 5)))
@@ -194,7 +193,7 @@ def step2_confirm():
                         save_custom_category(data['category'])
                     
                     st.success("✅ Habit saved successfully!")
-                    # st.session_state.habit_saved = True
+
                     
                     time.sleep(0.2)
                     st.session_state.current_step = 3
